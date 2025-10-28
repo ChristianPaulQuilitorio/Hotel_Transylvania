@@ -138,6 +138,18 @@ img, svg, video, canvas { max-width: 100%; height: auto; }
 :root.theme-dark:not(.no-toolbar-gradient) .mat-toolbar.mat-primary { background: linear-gradient(90deg, #2f2f2f, #3a3a3a) !important; }
 .theme-dark .btn-primary { --bs-btn-color: #111; --bs-btn-bg: var(--brand-khaki); --bs-btn-border-color: var(--brand-khaki); }
 .theme-dark .card { background-color: #262626; color: #e7e7e7; }
+/* Strengthen base text and headings in dark mode for readability */
+.theme-dark body { color: #ededed; }
+.theme-dark h1, .theme-dark h2, .theme-dark h3, .theme-dark h4, .theme-dark h5, .theme-dark h6 { color: #f3f3f3; }
+.theme-dark .lead { color: #d9d9d9 !important; }
+.theme-dark .small, .theme-dark small { color: #c9c9c9; }
+.theme-dark a { color: var(--bs-link-color); }
+.theme-dark a:hover { color: var(--bs-link-hover-color); }
+
+/* Landing featured cards: raise contrast for metadata */
+.theme-dark .featured-section .card { background-color: #2a2a2a; }
+.theme-dark .featured-section .text-muted { color: #c6c6c6 !important; }
+.theme-dark .featured-section .badge.bg-success { color: #fff; }
 
 /* Chat & offcanvas readability in dark mode */
 .theme-dark .offcanvas,
@@ -146,11 +158,24 @@ img, svg, video, canvas { max-width: 100%; height: auto; }
 .theme-dark .btn-close { filter: invert(1) grayscale(100%); opacity: 0.8; }
 .theme-dark .btn-close:hover { opacity: 1; }
 .theme-dark .chat-messages { background: #141414 !important; border-color: #333 !important; }
-.theme-dark .chat-bubble.assistant { background: #2a2a2a !important; color: #eaeaea !important; }
+.theme-dark .chat-bubble.assistant { background: #2a2a2a !important; color: #f0f0f0 !important; }
 .theme-dark .chat-bubble.user { color: #111 !important; }
-.theme-dark .text-muted { color: #b5b5b5 !important; }
-.theme-dark .form-control { background: #1c1c1c; color: #e7e7e7; border-color: #3a3a3a; }
-.theme-dark .form-control::placeholder { color: #9aa0a6; }
+.theme-dark .text-muted { color: #cfcfcf !important; }
+.theme-dark .chat-bubble .text-muted,
+.theme-dark .chat-bubble small,
+.theme-dark .chat-bubble .small { color: #d8d8d8 !important; }
+.theme-dark .chat-bubble a { color: #9bd83a; }
+.theme-dark .chat-bubble a:hover { color: #b2ea48; }
+/* Improve readability for light cards embedded inside chat bubbles (rooms/availability) */
+.theme-dark .chat-bubble .bg-light,
+.theme-dark .chat-bubble .bg-light-subtle { background-color: #2f2f2f !important; color: #ededed !important; }
+.theme-dark .chat-bubble .border { border-color: #4a4a4a !important; }
+.theme-dark .chat-bubble .fw-semibold { color: #f3f3f3; }
+.theme-dark .chat-bubble .btn-outline-secondary { --bs-btn-color: #e6e6e6; --bs-btn-border-color: #8a8a8a; }
+.theme-dark .chat-bubble .btn-outline-secondary:hover { --bs-btn-hover-bg: #3a3a3a; --bs-btn-hover-border-color: #9a9a9a; --bs-btn-hover-color: #fff; }
+.theme-dark .form-control { background: #1c1c1c; color: #f0f0f0; border-color: #4a4a4a; }
+.theme-dark .form-control::placeholder { color: #b5bdc7; }
+.theme-dark .input-group-text, .theme-dark .form-select { background: #1c1c1c; color: #f0f0f0; border-color: #4a4a4a; }
 .theme-dark .btn-outline-secondary {
   --bs-btn-color: #d0d0d0;
   --bs-btn-border-color: #6a6a6a;
