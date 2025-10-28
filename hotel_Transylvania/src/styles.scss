@@ -159,6 +159,14 @@ img, svg, video, canvas { max-width: 100%; height: auto; }
   --bs-btn-hover-color: #ffffff;
 }
 
+/* Hide chat FAB when help/tutorial is open */
+.offcanvas-help-open .chat-fab { display: none !important; }
+
+/* During guided tour, keep FAB visible so it can be highlighted */
+
+/* Disable body scroll during tour for steadier positioning */
+body.tour-open { overflow: hidden; }
+
 /* Toolbar hover affordance */
 .mat-toolbar button.mat-mdc-button:hover,
 .mat-toolbar a.mat-mdc-button:hover {

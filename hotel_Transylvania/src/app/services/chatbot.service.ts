@@ -5,6 +5,12 @@ import { getBookedRoomIdsOnDate, isRoomBookedOnDate, isRoomAvailableRPC, availab
 
 export type ChatRole = 'system' | 'user' | 'assistant';
 export type ChatMsg = { role: ChatRole; content: string };
+export type RoomsItem = { id: number; name: string; amenities: string[] };
+export type AvailabilityItem = { id: number; name: string };
+export type ChatReply =
+  | { kind: 'text'; text: string }
+  | { kind: 'rooms'; title?: string; items: RoomsItem[] }
+  | { kind: 'availability'; date: string; rooms: AvailabilityItem[] };
 
 // Small, app-specific system prompt. If the AI is unsure or outside scope, it must defer.
 const APP_SUMMARY = `
@@ -24,7 +30,7 @@ export class ChatbotService {
   private faqIntents: { id: string; patterns: string[]; answer: string }[] = [];
 
   // Sends the conversation to Supabase Edge Function 'chatbot'.
-  async send(userMessages: ChatMsg[]): Promise<string> {
+  async send(userMessages: ChatMsg[]): Promise<ChatReply> {
     // 1) Try local, deterministic answers first (fast and reliable)
   const lastUser = [...userMessages].reverse().find(m => m.role === 'user');
   const local = lastUser ? await this.answerLocally(lastUser.content) : null;
@@ -38,9 +44,9 @@ export class ChatbotService {
       });
       if (error) throw error;
       const reply: string | undefined = data?.reply?.content;
-      return reply ?? 'AI can’t solve that, please contact our key personnel.';
+      return { kind: 'text', text: reply ?? 'AI can’t solve that, please contact our key personnel.' };
     } catch (e) {
-      return 'AI can’t solve that, please contact our key personnel.';
+      return { kind: 'text', text: 'AI can’t solve that, please contact our key personnel.' };
     }
   }
 
@@ -60,26 +66,26 @@ export class ChatbotService {
     }
   }
 
-  private async answerLocally(text: string): Promise<string | null> {
+  private async answerLocally(text: string): Promise<ChatReply | null> {
     const q = text.toLowerCase().trim();
 
     // -1) Quick greeting intent
     if (/^(hi|hello|hey|yo|good\s*(morning|afternoon|evening)|greetings|sup|what'?s up|whats up|hola)\b/.test(q)) {
       const ans = "Hello! I'm Drac. How can I help with bookings or availability today?";
-      await this.logChat(text, ans, false, 'greeting');
-      return ans;
+  await this.logChat(text, ans, false, 'greeting');
+  return { kind: 'text', text: ans };
     }
 
     // 0) Availability questions (dynamic)
     const availability = await this.tryAvailability(q);
-    if (availability) return availability;
+  if (availability) return availability;
 
     // 1) JSON FAQ (editable without code)
     await this.loadFaq();
     for (const intent of this.faqIntents) {
       if (intent.patterns?.some(p => q.includes(p.toLowerCase()))) {
-        await this.logChat(text, intent.answer, false, intent.id);
-        return intent.answer;
+  await this.logChat(text, intent.answer, false, intent.id);
+  return { kind: 'text', text: intent.answer };
       }
     }
 
@@ -92,8 +98,8 @@ export class ChatbotService {
         '3) Pick a check-in date and choose 1–5 days.',
         '4) Click Avail to confirm. The room turns Booked and only you can Cancel it.',
       ].join('\n');
-      await this.logChat(text, ans, false, 'booking_help');
-      return ans;
+  await this.logChat(text, ans, false, 'booking_help');
+  return { kind: 'text', text: ans };
     }
 
     // Login / Signup
@@ -102,8 +108,8 @@ export class ChatbotService {
         'Login/Signup:',
         '• Use the Login or Sign up buttons on the toolbar.',
       ].join('\n');
-      await this.logChat(text, ans, false, 'login_help');
-      return ans;
+  await this.logChat(text, ans, false, 'login_help');
+  return { kind: 'text', text: ans };
     }
 
     // Cancel booking
@@ -113,29 +119,29 @@ export class ChatbotService {
         '• Open the room you booked, then click Cancel booking in the modal.',
         '• Only the person who booked the room can see and use Cancel.',
       ].join('\n');
-      await this.logChat(text, ans, false, 'cancel_help');
-      return ans;
+  await this.logChat(text, ans, false, 'cancel_help');
+  return { kind: 'text', text: ans };
     }
 
     // Why can’t I cancel others?
     if (/(why\s+can.?t\s+i\s+cancel|cannot\s+cancel\s+someone|other\s+customer\s+cancel)/.test(q)) {
       const ans = 'Only the original booker can cancel a room. This is enforced by Row Level Security (RLS) in the database and by the UI.';
-      await this.logChat(text, ans, false, 'rls_explain');
-      return ans;
+  await this.logChat(text, ans, false, 'rls_explain');
+  return { kind: 'text', text: ans };
     }
 
     // How many days / 5-day limit
     if (/(how\s+many\s+days|days\s+limit|book\s+for\s+6|more\s+than\s+5)/.test(q)) {
       const ans = 'You can select 1–5 days per booking in the modal. Longer stays are not allowed in the current UI.';
-      await this.logChat(text, ans, false, 'days_limit');
-      return ans;
+  await this.logChat(text, ans, false, 'days_limit');
+  return { kind: 'text', text: ans };
     }
 
     // Available rooms question
     if (/(what\s+rooms\s+are\s+available|available\s+rooms|which\s+rooms\s+are\s+free)/.test(q)) {
       const ans = 'Available rooms are marked with the Available badge on the Dashboard grid (green). Booked rooms are labeled Booked.';
-      await this.logChat(text, ans, false, 'available_rooms_generic');
-      return ans;
+  await this.logChat(text, ans, false, 'available_rooms_generic');
+  return { kind: 'text', text: ans };
     }
 
     // Ask for rooms details & amenities
@@ -149,18 +155,13 @@ export class ChatbotService {
           { id: 4, name: 'Queen Standard', capacity: 2 },
           { id: 5, name: 'Executive Suite', capacity: 3 },
         ] as any[];
-        const lines = source.map(r => {
-          const am = getRoomAmenities(r.id).join(', ') || 'Standard amenities';
-          return `• Room ${r.id} – ${r.name} (capacity ${r.capacity}). Amenities: ${am}.`;
-        });
-        const ans = ['We offer the following rooms:', ...lines].join('\n');
-        await this.logChat(text, ans, false, 'rooms_amenities_list');
-        return ans;
+        const items: RoomsItem[] = source.map(r => ({ id: r.id, name: r.name, amenities: getRoomAmenities(r.id) }));
+        await this.logChat(text, 'rooms_amenities_list', false, 'rooms_amenities_list');
+        return { kind: 'rooms', title: 'We offer the following rooms:', items };
       } catch {
-        const lines = Object.entries(ROOM_AMENITIES).map(([id, am]) => `• Room ${id}: ${am.join(', ')}`);
-        const ans = ['We offer multiple room types. Amenities include:', ...lines].join('\n');
-        await this.logChat(text, ans, true, 'rooms_amenities_fallback');
-        return ans;
+        const items: RoomsItem[] = Object.entries(ROOM_AMENITIES).map(([id, am]) => ({ id: Number(id), name: `Room ${id}`, amenities: am as string[] }));
+        await this.logChat(text, 'rooms_amenities_fallback', true, 'rooms_amenities_fallback');
+        return { kind: 'rooms', title: 'We offer multiple room types. Amenities include:', items };
       }
     }
 
@@ -185,7 +186,7 @@ export class ChatbotService {
     return null;
   }
 
-  private async tryAvailability(q: string): Promise<string | null> {
+  private async tryAvailability(q: string): Promise<ChatReply | null> {
     // Room-specific: "is room 2 available on 2025-11-03"
     const roomMatch = q.match(/room\s+(\d+)\s+(available|free)\s+(on|at|for)\s+(.*)/)
                     || q.match(/is\s+room\s+(\d+)\s+(available|free)(.*)/);
@@ -199,7 +200,7 @@ export class ChatbotService {
           ? `Room ${id} is available on ${date}.`
           : `Room ${id} is NOT available on ${date}.`;
         await this.logChat(q, ans, false, 'availability_room_date');
-        return ans;
+        return { kind: 'text', text: ans };
       } catch {
         // RLS likely blocks bookings read; fall back to current room status only
         try {
@@ -208,13 +209,13 @@ export class ChatbotService {
           if (room) {
             const ans = `I couldn't check date-based bookings due to permissions. Based on current status, Room ${id} is ${room.status}.`;
             await this.logChat(q, ans, false, 'availability_room_status_fallback');
-            return ans;
+            return { kind: 'text', text: ans };
           }
         } catch {}
         // final: no info
         const ans = 'AI can’t solve that, please contact our key personnel.';
-        await this.logChat(q, ans, true, 'availability_room_error');
-        return ans;
+  await this.logChat(q, ans, true, 'availability_room_error');
+  return { kind: 'text', text: ans };
       }
     }
 
@@ -226,19 +227,17 @@ export class ChatbotService {
         // Prefer RPC for date list
         const [rooms, availableIds] = await Promise.all([getRooms(), availableRoomsOnRPC(when)]);
         const available = rooms.filter(r => availableIds.includes(r.id));
-        const list = available.length ? available.map(r => `${r.id} - ${r.name}`).join(', ') : 'none';
-        const ans = `Available rooms on ${when}: ${list}`;
-        await this.logChat(q, ans, false, 'availability_list_date');
-        return ans;
+        const items: AvailabilityItem[] = available.map(r => ({ id: r.id, name: r.name }));
+        await this.logChat(q, `Available rooms on ${when}`, false, 'availability_list_date');
+        return { kind: 'availability', date: when, rooms: items };
       } catch {
         // RLS likely blocks bookings read; fall back to current room statuses only
         try {
           const rooms = await getRooms();
           const available = rooms.filter(r => r.status === 'available');
-          const list = available.length ? available.map(r => `${r.id} - ${r.name}`).join(', ') : 'none';
-          const ans = `I couldn't check date-based bookings due to permissions. Based on current statuses, available now: ${list}`;
-          await this.logChat(q, ans, false, 'availability_list_status_fallback');
-          return ans;
+          const items: AvailabilityItem[] = available.map(r => ({ id: r.id, name: r.name }));
+          await this.logChat(q, 'Available now (status only)', false, 'availability_list_status_fallback');
+          return { kind: 'availability', date: 'now', rooms: items };
         } catch {}
       }
     }

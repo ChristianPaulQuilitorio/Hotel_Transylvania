@@ -1,7 +1,7 @@
 import { Component, AfterViewInit, OnDestroy, ElementRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ChatbotService, ChatMsg } from '../services/chatbot.service';
+import { ChatbotService, ChatMsg, ChatReply } from '../services/chatbot.service';
 import { SettingsService } from '../services/settings.service';
 import { createBooking } from '../services/bookings.service';
 import { bookRoom } from '../services/rooms.service';
@@ -26,6 +26,7 @@ import { supabase } from '../services/supabase.service';
         </div>
       </div>
       <div class="d-flex align-items-center gap-2 ms-auto">
+        <button class="btn btn-sm btn-outline-secondary" type="button" (click)="exportTranscript()" aria-label="Export chat transcript">Export</button>
         <button class="btn btn-sm btn-link text-secondary" type="button" (click)="clearChat()" aria-label="Clear conversation">Clear</button>
         <button type="button" class="btn-close" data-bs-dismiss="offcanvas" (click)="closeChat()" aria-label="Close chat"></button>
       </div>
@@ -42,8 +43,41 @@ import { supabase } from '../services/supabase.service';
               </div>
               <!-- Bubble -->
               <div class="p-2 rounded-3 shadow-sm chat-bubble" [ngClass]="m.role==='user' ? 'user bg-primary text-white' : 'assistant bg-white'">
-                <div style="white-space: pre-wrap;">{{ m.content }}</div>
-                <div class="mt-1 small opacity-75" [class.text-end]="m.role==='user'">{{ m.time }}</div>
+                <!-- Text message -->
+                <div *ngIf="!m.rooms && !m.availability" [innerHTML]="renderMarkdown(m.content||'')"></div>
+
+                <!-- Rooms list cards -->
+                <div *ngIf="m.rooms">
+                  <div class="mb-2" *ngIf="m.content">{{ m.content }}</div>
+                  <div *ngFor="let r of m.rooms" class="border rounded p-2 mb-2 bg-light-subtle">
+                    <div class="fw-semibold">Room {{r.id}} – {{r.name}}</div>
+                    <div class="small text-muted">Amenities: {{ r.amenities.join(', ') || 'Standard amenities' }}</div>
+                    <div class="mt-2 d-flex gap-2">
+                      <button class="btn btn-sm btn-outline-secondary" (click)="prefill('Is room '+r.id+' available today?')">Check availability</button>
+                      <button class="btn btn-sm btn-outline-secondary" (click)="startBookingSlots(r.id)">Book</button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Availability list -->
+                <div *ngIf="m.availability">
+                  <div class="mb-2">{{ m.content }}</div>
+                  <div *ngIf="m.availability.rooms.length; else noneAvail">
+                    <div *ngFor="let r of m.availability.rooms" class="border rounded p-2 mb-2 bg-light-subtle d-flex justify-content-between align-items-center">
+                      <div>Room {{r.id}} – {{r.name}}</div>
+                      <div class="d-flex gap-2">
+                        <button class="btn btn-sm btn-outline-secondary" (click)="prefill('Book room '+r.id+' '+(m.availability.date||'today')+' for 1 day')">Book</button>
+                      </div>
+                    </div>
+                  </div>
+                  <ng-template #noneAvail><div class="small text-muted">No rooms available.</div></ng-template>
+                </div>
+
+                <!-- Bubble footer -->
+                <div class="mt-1 small opacity-75 d-flex" [class.flex-row-reverse]="m.role==='user'">
+                  <span>{{ m.time }}</span>
+                  <button *ngIf="m.role==='assistant' && !m.rooms && !m.availability && (m.content||'').length>0" class="btn btn-link btn-sm ms-auto p-0" (click)="copy(m.content!)">Copy</button>
+                </div>
               </div>
             </div>
           </div>
@@ -95,8 +129,8 @@ export class ChatbotComponent implements AfterViewInit, OnDestroy {
   @ViewChild('chatInput') chatInputRef!: ElementRef<HTMLInputElement>;
   @ViewChild('msgWrap') msgWrapRef!: ElementRef<HTMLDivElement>;
 
-  // UI message with timestamp for nicer rendering
-  messages: ({ role: 'user'|'assistant'; content: string; time: string })[] = [];
+  // UI message with timestamp and optional rich payload
+  messages: ({ role: 'user'|'assistant'; time: string; content?: string; rooms?: {id:number; name:string; amenities:string[]}[]; availability?: { date:string; rooms:{id:number; name:string}[] } })[] = [];
   input = '';
   loading = false;
   pendingBooking: { roomId: number; checkin: string; days: number; checkout: string } | null = null;
@@ -118,9 +152,28 @@ export class ChatbotComponent implements AfterViewInit, OnDestroy {
     el.addEventListener('shown.bs.offcanvas', onShown);
     el.addEventListener('hidden.bs.offcanvas', onHidden);
 
+    // Close chat when tutorial/help opens or tour starts
+    const closePanel = () => {
+      try {
+        const bootstrapAny = (window as any).bootstrap;
+        if (bootstrapAny?.Offcanvas) {
+          const off = bootstrapAny.Offcanvas.getOrCreateInstance(el);
+          off.hide();
+        } else {
+          el.classList.remove('show');
+          el.style.visibility = 'hidden';
+        }
+      } catch {}
+      this.isChatOpen = false;
+    };
+    window.addEventListener('app:help-opened', closePanel as any);
+    window.addEventListener('app:tour-start', closePanel as any);
+    (this as any)._helpHandler = closePanel;
+
     // global '/' shortcut to focus chat
     const onKeydown = (e: KeyboardEvent) => {
-      if (!this.settings.get().enableChatShortcut) return;
+  if (!this.settings.get().enableChatShortcut) return;
+  if (document.body.classList.contains('offcanvas-help-open') || document.body.classList.contains('tour-open')) return; // pause while tutorial/help/tour is open
       const isSlash = e.key === '/' || e.code === 'Slash';
       if (isSlash && !e.ctrlKey && !e.metaKey && !e.altKey) {
         const target = e.target as HTMLElement | null;
@@ -169,6 +222,11 @@ export class ChatbotComponent implements AfterViewInit, OnDestroy {
         if (this.offcanvasShownHandler) el.removeEventListener('shown.bs.offcanvas', this.offcanvasShownHandler);
         if (this.offcanvasHiddenHandler) el.removeEventListener('hidden.bs.offcanvas', this.offcanvasHiddenHandler);
       }
+      const h2 = (this as any)._helpHandler;
+      if (h2) {
+        window.removeEventListener('app:help-opened', h2 as any);
+        window.removeEventListener('app:tour-start', h2 as any);
+      }
       const h = (this as any)._chatKeyHandler;
       if (h) document.removeEventListener('keydown', h as any);
     } catch {}
@@ -185,10 +243,44 @@ export class ChatbotComponent implements AfterViewInit, OnDestroy {
   async send() {
     const text = this.input.trim();
     if (!text) return;
-    this.messages.push({ role: 'user', content: text, time: this.nowTime() });
+  this.messages.push({ role: 'user', content: text, time: this.nowTime() });
     this.persist();
     this.scrollToBottomSoon();
     this.input = '';
+
+    // Slot-filling state machine (room -> date -> days)
+    const sf = (this as any)._sf as { step?: 'room'|'date'|'days'; roomId?: number; checkin?: string; days?: number } | undefined;
+    if (sf && sf.step) {
+      if (sf.step === 'date') {
+        const date = this.parseDateToken(text);
+        if (!date) {
+          this.messages.push({ role: 'assistant', content: 'Please provide a date like 2025-11-03 or say “today/tomorrow”.', time: this.nowTime() });
+          this.persist();
+          this.scrollToBottomSoon();
+          return;
+        }
+        sf.checkin = date; sf.step = 'days';
+        this.messages.push({ role: 'assistant', content: 'How many days? (1–5)', time: this.nowTime() });
+        this.persist(); this.scrollToBottomSoon();
+        return;
+      } else if (sf.step === 'days') {
+        const dm = text.match(/(\d+)/);
+        const days = dm ? Math.min(5, Math.max(1, Number(dm[1]))) : 0;
+        if (!days) {
+          this.messages.push({ role: 'assistant', content: 'Please enter a number from 1 to 5.', time: this.nowTime() });
+          this.persist(); this.scrollToBottomSoon();
+          return;
+        }
+        sf.days = days;
+        const d = new Date(sf.checkin as string); d.setDate(d.getDate()+days);
+        const checkout = this.toISO(d);
+        this.pendingBooking = { roomId: sf.roomId as number, checkin: sf.checkin as string, days, checkout };
+        this.messages.push({ role: 'assistant', content: `Got it. I can book Room ${sf.roomId} from ${sf.checkin} for ${days} day(s) (checkout ${checkout}). Please confirm below.`, time: this.nowTime() });
+        (this as any)._sf = undefined;
+        this.persist(); this.scrollToBottomSoon();
+        return;
+      }
+    }
 
     // If user message looks like a booking command, validate required details and prepare a confirmation
     const detectedIntent = /book\s+room\s+\d+/i.test(text);
@@ -222,10 +314,10 @@ export class ChatbotComponent implements AfterViewInit, OnDestroy {
     this.loading = true;
     const mySerial = ++this.requestSerial;
     try {
-      const history: ChatMsg[] = this.messages.slice(-12).map(m => ({ role: m.role as ChatMsg['role'], content: m.content }));
-      const reply = await this.chat.send(history);
+      const history: ChatMsg[] = this.messages.slice(-12).map(m => ({ role: m.role as ChatMsg['role'], content: (m.content ?? '') }));
+      const reply: ChatReply = await this.chat.send(history);
       if (this.requestSerial === mySerial) {
-        this.messages.push({ role: 'assistant', content: reply, time: this.nowTime() });
+        this.pushAssistantReply(reply);
         this.persist();
         this.scrollToBottomSoon();
       }
@@ -328,6 +420,23 @@ export class ChatbotComponent implements AfterViewInit, OnDestroy {
     this.pendingBooking = null;
     this.persist();
   }
+  exportTranscript() {
+    const lines = this.messages.map(m => `[${m.time}] ${m.role === 'user' ? 'You' : 'Drac'}: ${m.content ?? (m.rooms ? '(rooms list)' : m.availability ? '(availability list)' : '')}`);
+    const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'booksmart-chat.txt'; a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+  }
+  private pushAssistantReply(reply: ChatReply) {
+    if (reply.kind === 'text') {
+      this.messages.push({ role: 'assistant', content: reply.text, time: this.nowTime() });
+    } else if (reply.kind === 'rooms') {
+      this.messages.push({ role: 'assistant', content: reply.title ?? 'Rooms', rooms: reply.items, time: this.nowTime() });
+    } else if (reply.kind === 'availability') {
+      this.messages.push({ role: 'assistant', content: `Available rooms on ${reply.date}:`, availability: { date: reply.date, rooms: reply.rooms }, time: this.nowTime() });
+    }
+  }
 
   private nowTime(): string {
     const d = new Date();
@@ -346,5 +455,42 @@ export class ChatbotComponent implements AfterViewInit, OnDestroy {
 
   private persist() {
     try { localStorage.setItem('chat_history', JSON.stringify(this.messages)); } catch {}
+  }
+
+  // Helpers for rich UI
+  renderMarkdown(text: string): string {
+    // ultra-simple safe markdown: bold **text**, bullet lines starting with - or •, and links http(s)
+    const esc = (s: string) => s.replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c] as string));
+    let html = esc(text);
+    html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    // links
+    html = html.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
+    // bullet list
+    if (/^(?:[-•]\s.+)/m.test(text)) {
+      const lines = html.split(/\n/).map(l => l.replace(/^[-•]\s+(.+)/, '<li>$1</li>'));
+      html = lines.join('\n');
+      if (html.includes('<li>')) html = '<ul class="mb-0 ps-3">' + html + '</ul>';
+    } else {
+      html = html.replace(/\n/g, '<br>');
+    }
+    return html;
+  }
+
+  prefill(text: string) {
+    this.input = text;
+    this.send();
+  }
+
+  startBookingSlots(roomId: number) {
+    // Ask for missing date and days step-by-step
+    if (!roomId) return;
+    this.messages.push({ role: 'assistant', content: `Great, let’s book Room ${roomId}. What’s your check-in date? (YYYY-MM-DD or say “today/tomorrow”)`, time: this.nowTime() });
+    (this as any)._sf = { step: 'date', roomId };
+    this.persist();
+    this.scrollToBottomSoon();
+  }
+
+  copy(text: string) {
+    try { navigator.clipboard.writeText(text); } catch {}
   }
 }

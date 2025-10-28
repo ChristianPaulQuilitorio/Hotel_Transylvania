@@ -62,7 +62,7 @@ type Room = {
       </div>
 
       <div class="row g-3">
-        <div class="col-12 col-sm-6 col-lg-4" *ngFor="let room of rooms">
+        <div class="col-12 col-sm-6 col-lg-4" *ngFor="let room of rooms; let i = index">
           <div class="card h-100 shadow-sm">
             <img [src]="room.image" class="card-img-top" [alt]="room.name" style="object-fit:cover; height:160px;" />
             <div class="card-body d-flex flex-column">
@@ -79,7 +79,8 @@ type Room = {
                 <span class="text-muted ms-1" *ngIf="ratings[room.id] as r">({{ r.average | number:'1.1-1' }} / 5, {{ r.count }} ratings)</span>
               </div>
               <p class="text-muted small flex-grow-1">{{ room.short }}</p>
-              <button class="btn btn-primary mt-auto" (click)="openRoom(room)"
+        <button class="btn btn-primary mt-auto" (click)="openRoom(room)"
+          [attr.id]="i===0 ? 'tour-first-room-details' : null"
                       [attr.aria-label]="(room.status==='available' ? 'View details for ' : 'View booking for ') + room.name">
                 {{ room.status==='available' ? 'View details' : 'View booking' }}
               </button>

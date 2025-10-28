@@ -11,11 +11,13 @@ import { SettingsService } from './services/settings.service';
 import { supabase, signOut } from './services/supabase.service';
 import { ensureProfile } from './services/profiles.service';
 import { ChatbotComponent } from './chatbot/chatbot.component';
+import { TutorialComponent } from './tutorial/tutorial.component';
+import { TourComponent } from './tour/tour.component';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, CommonModule, RouterLink, MatToolbarModule, MatButtonModule, MatIconModule, MatMenuModule, MatDividerModule, ChatbotComponent],
+  imports: [RouterOutlet, CommonModule, RouterLink, MatToolbarModule, MatButtonModule, MatIconModule, MatMenuModule, MatDividerModule, ChatbotComponent, TutorialComponent, TourComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss'
 })
@@ -53,6 +55,11 @@ export class AppComponent implements OnInit, OnDestroy {
       if (user) {
         await ensureProfile(user);
         await this.loadUserInfo(user.id);
+        // If user landed here via email verification, take them to the dashboard
+        const path = this.router.url.split('?')[0];
+        if (path === '/' || path.startsWith('/login') || path.startsWith('/signup')) {
+          this.router.navigateByUrl('/dashboard');
+        }
       } else {
         this.username = null;
         this.email = null;
@@ -62,16 +69,30 @@ export class AppComponent implements OnInit, OnDestroy {
     }
 
     // subscribe to auth changes
-    this.authSub = supabase.auth.onAuthStateChange((_event: any, session: any) => {
+    this.authSub = supabase.auth.onAuthStateChange((event: string, session: any) => {
       this.isAuthenticated = !!session?.user;
       if (session?.user) {
         ensureProfile(session.user);
         this.loadUserInfo(session.user.id);
+        // After a successful sign-in (including magic-link), route to dashboard if on login/signup/landing
+        const path = this.router.url.split('?')[0];
+        if (event === 'SIGNED_IN' && (path === '/' || path.startsWith('/login') || path.startsWith('/signup'))) {
+          this.router.navigateByUrl('/dashboard');
+        }
       } else {
         this.username = null;
         this.email = null;
       }
     });
+
+    // New user tutorial: show once on first visit
+    try {
+      const seen = localStorage.getItem('seen_tutorial');
+      if (!seen) {
+        setTimeout(() => this.openHelp(true), 800);
+        localStorage.setItem('seen_tutorial', '1');
+      }
+    } catch {}
   }
 
   ngOnDestroy() {
@@ -118,5 +139,33 @@ export class AppComponent implements OnInit, OnDestroy {
   toggleDarkMode() {
     this.darkMode = !this.darkMode;
     this.settings.set({ highContrast: this.darkMode });
+  }
+
+  openHelp(silent = false) {
+    try {
+      const el = document.getElementById('helpCanvas');
+      if (!el) return;
+      // Notify other UI (chat) to close and hide FAB while help is open
+      try { window.dispatchEvent(new CustomEvent('app:help-opened')); } catch {}
+      document.body.classList.add('offcanvas-help-open');
+      // Ensure we remove the helper class when closed
+      const onHidden = () => {
+        document.body.classList.remove('offcanvas-help-open');
+        el.removeEventListener('hidden.bs.offcanvas', onHidden as any);
+        try { window.dispatchEvent(new CustomEvent('app:help-closed')); } catch {}
+      };
+      el.addEventListener('hidden.bs.offcanvas', onHidden as any, { once: true } as any);
+      const bootstrapAny = (window as any).bootstrap;
+      if (bootstrapAny?.Offcanvas) {
+        const off = bootstrapAny.Offcanvas.getOrCreateInstance(el);
+        off.show();
+      } else if (!silent && bootstrapAny) {
+        const off = new bootstrapAny.Offcanvas(el);
+        off.show();
+      } else if (!silent) {
+        el.classList.add('show');
+        (el as HTMLElement).style.visibility = 'visible';
+      }
+    } catch {}
   }
 }

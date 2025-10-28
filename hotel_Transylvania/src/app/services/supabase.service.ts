@@ -39,8 +39,16 @@ export const supabase: SupabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON
   }
 });
 
-export const signUp = (email: string, password: string) =>
-  supabase.auth.signUp({ email, password });
+export const signUp = (email: string, password: string) => {
+  // Redirect directly to the Dashboard after email verification
+  // This uses the current origin so it works for localhost and production.
+  const redirect = (typeof location !== 'undefined' ? location.origin : '') + '/dashboard';
+  return supabase.auth.signUp({
+    email,
+    password,
+    options: { emailRedirectTo: redirect }
+  } as any);
+};
 
 export const signIn = (email: string, password: string) =>
   supabase.auth.signInWithPassword({ email, password });
