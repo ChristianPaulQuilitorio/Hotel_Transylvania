@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { supabase } from './supabase.service';
-import { getRooms } from './rooms.service';
+import { getRooms, getRoomAmenities, ROOM_AMENITIES } from './rooms.service';
 import { getBookedRoomIdsOnDate, isRoomBookedOnDate, isRoomAvailableRPC, availableRoomsOnRPC } from './bookings.service';
 
 export type ChatRole = 'system' | 'user' | 'assistant';
@@ -62,6 +62,13 @@ export class ChatbotService {
 
   private async answerLocally(text: string): Promise<string | null> {
     const q = text.toLowerCase().trim();
+
+    // -1) Quick greeting intent
+    if (/^(hi|hello|hey|yo|good\s*(morning|afternoon|evening)|greetings|sup|what'?s up|whats up|hola)\b/.test(q)) {
+      const ans = "Hello! I'm Drac. How can I help with bookings or availability today?";
+      await this.logChat(text, ans, false, 'greeting');
+      return ans;
+    }
 
     // 0) Availability questions (dynamic)
     const availability = await this.tryAvailability(q);
@@ -129,6 +136,32 @@ export class ChatbotService {
       const ans = 'Available rooms are marked with the Available badge on the Dashboard grid (green). Booked rooms are labeled Booked.';
       await this.logChat(text, ans, false, 'available_rooms_generic');
       return ans;
+    }
+
+    // Ask for rooms details & amenities
+    if (/(what\s+rooms(\s+do\s+you\s+have)?|list\s+rooms|show\s+rooms|amenities|what\'s\s+included|whats\s+included)/.test(q)) {
+      try {
+        const rooms = await getRooms().catch(() => null);
+        const source = rooms && rooms.length ? rooms : [
+          { id: 1, name: 'Deluxe King', capacity: 2 },
+          { id: 2, name: 'Twin Suite', capacity: 2 },
+          { id: 3, name: 'Family Room', capacity: 4 },
+          { id: 4, name: 'Queen Standard', capacity: 2 },
+          { id: 5, name: 'Executive Suite', capacity: 3 },
+        ] as any[];
+        const lines = source.map(r => {
+          const am = getRoomAmenities(r.id).join(', ') || 'Standard amenities';
+          return `• Room ${r.id} – ${r.name} (capacity ${r.capacity}). Amenities: ${am}.`;
+        });
+        const ans = ['We offer the following rooms:', ...lines].join('\n');
+        await this.logChat(text, ans, false, 'rooms_amenities_list');
+        return ans;
+      } catch {
+        const lines = Object.entries(ROOM_AMENITIES).map(([id, am]) => `• Room ${id}: ${am.join(', ')}`);
+        const ans = ['We offer multiple room types. Amenities include:', ...lines].join('\n');
+        await this.logChat(text, ans, true, 'rooms_amenities_fallback');
+        return ans;
+      }
     }
 
     return null; // let AI try next

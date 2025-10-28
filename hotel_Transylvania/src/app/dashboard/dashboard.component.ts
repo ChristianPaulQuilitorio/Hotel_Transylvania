@@ -1,10 +1,12 @@
-import { Component, ElementRef, ViewChild, OnInit } from '@angular/core';
+import { Component, ElementRef, ViewChild, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { getUser, supabase } from '../services/supabase.service';
-import { getRooms as fetchRooms, seedRooms, bookRoom, cancelRoom, RoomDb } from '../services/rooms.service';
+import { getRooms as fetchRooms, seedRooms, bookRoom, cancelRoom, RoomDb, getRoomAmenities } from '../services/rooms.service';
 import { createBooking, cancelBooking } from '../services/bookings.service';
+import { RatingsService } from '../services/ratings.service';
+import { WeatherService } from '../services/weather.service';
 
 type Room = {
   id: number;
@@ -21,7 +23,38 @@ type Room = {
   selector: 'app-dashboard',
   standalone: true,
   imports: [CommonModule, FormsModule],
+  styles: [`
+    .card.h-100 {
+      border: 0;
+      transition: transform .25s ease, box-shadow .25s ease;
+    }
+    .card.h-100:hover {
+      transform: translateY(-6px) scale(1.02);
+      box-shadow: 0 0.5rem 1.2rem rgba(0,0,0,.15) !important;
+    }
+    .card-img-top { transition: transform .35s ease; }
+    .card.h-100:hover .card-img-top { transform: scale(1.03); }
+
+    /* Greeting toast tweaks */
+    .greet-toast { font-size: 1.05rem; }
+    .greet-toast .toast-body { padding: 0.875rem 1rem; }
+    @media (min-width: 576px) {
+      .greet-toast { min-width: 360px; }
+    }
+  `],
   template: `
+    <!-- Greeting Toast -->
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1080">
+      <div #greetToast class="toast align-items-center text-bg-dark border-0 greet-toast" role="alert" aria-live="polite" aria-atomic="true">
+        <div class="d-flex">
+          <div class="toast-body">
+            {{ greetingMessage }}
+          </div>
+          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+      </div>
+    </div>
+
     <div class="container mt-4">
       <div class="d-flex justify-content-between align-items-center mb-3">
         <h3>Rooms</h3>
@@ -39,8 +72,15 @@ type Room = {
                   {{ room.status | titlecase }}
                 </span>
               </div>
+              <div class="mb-1 small text-warning" aria-label="Average rating">
+                <ng-container *ngFor="let s of [1,2,3,4,5]; let i = index">
+                  <span [class.opacity-50]="(ratings[room.id]?.average || 0) < s">★</span>
+                </ng-container>
+                <span class="text-muted ms-1" *ngIf="ratings[room.id] as r">({{ r.average | number:'1.1-1' }} / 5, {{ r.count }} ratings)</span>
+              </div>
               <p class="text-muted small flex-grow-1">{{ room.short }}</p>
-              <button class="btn btn-primary mt-auto" (click)="openRoom(room)">
+              <button class="btn btn-primary mt-auto" (click)="openRoom(room)"
+                      [attr.aria-label]="(room.status==='available' ? 'View details for ' : 'View booking for ') + room.name">
                 {{ room.status==='available' ? 'View details' : 'View booking' }}
               </button>
             </div>
@@ -60,6 +100,38 @@ type Room = {
               <img [src]="r.image" [alt]="r.name" class="img-fluid rounded mb-3" />
               <p class="mb-2">{{ r.description }}</p>
               <p class="mb-0"><strong>Capacity:</strong> {{ r.capacity }} person{{ r.capacity>1 ? 's' : '' }}</p>
+              <div class="mt-2">
+                <strong>Amenities:</strong>
+                <ul class="list-unstyled mb-0 mt-1 row row-cols-1 row-cols-sm-2 g-1">
+                  <li class="col d-flex align-items-start" *ngFor="let a of getAmenities(r.id)">
+                    <span class="material-icons me-1" style="font-size: 18px; line-height: 18px;">check_circle</span>
+                    <span class="small">{{ a }}</span>
+                  </li>
+                </ul>
+              </div>
+              <div class="mt-2 small">
+                <strong>Current rating:</strong>
+                <span class="text-warning">
+                  <ng-container *ngFor="let s of [1,2,3,4,5]">
+                    <span [class.opacity-50]="(ratings[r.id]?.average || 0) < s">★</span>
+                  </ng-container>
+                </span>
+                <span class="text-muted" *ngIf="ratings[r.id] as rr"> {{ rr.average | number:'1.1-1' }} / 5 ({{ rr.count }})</span>
+              </div>
+
+              <div class="mt-3 border rounded p-2 bg-light-subtle">
+                <label class="form-label mb-1">Your rating</label>
+                <div class="mb-2">
+                  <button type="button" class="btn btn-sm" [class.text-warning]="userRating >= s" *ngFor="let s of [1,2,3,4,5]" (click)="userRating = s" [attr.aria-label]="'Rate ' + s + ' stars'">★</button>
+                </div>
+                <label class="form-label mt-1">Feedback (optional)</label>
+                <textarea class="form-control" rows="2" [(ngModel)]="userComment" placeholder="Tell us what you liked or what to improve"></textarea>
+                <div class="d-flex justify-content-end mt-2">
+                  <button class="btn btn-outline-primary btn-sm" (click)="submitRating(r.id)" [disabled]="!userRating || !currentUserId">Submit rating</button>
+                </div>
+                <div class="text-danger small mt-1" *ngIf="ratingError">{{ ratingError }}</div>
+                <div class="text-success small mt-1" *ngIf="ratingSuccess">Thanks for your feedback!</div>
+              </div>
               <p *ngIf="r.status==='booked' && r.bookedBy && r.bookedBy !== currentUserId" class="text-danger mt-2 mb-0">
                 This room is booked by another user.
               </p>
@@ -90,8 +162,9 @@ type Room = {
   `
 })
 
-export class DashboardComponent implements OnInit {
+export class DashboardComponent implements OnInit, OnDestroy {
   @ViewChild('roomModal', { static: true }) roomModalRef!: ElementRef<HTMLDivElement>;
+  @ViewChild('greetToast', { static: true }) greetToastRef!: ElementRef<HTMLDivElement>;
 
   rooms: Room[] = [];
 
@@ -106,8 +179,15 @@ export class DashboardComponent implements OnInit {
   errorMessage: string | null = null;
   currentUsername: string | null = null;
   currentEmail: string | null = null;
+  ratings: Record<number, { average: number; count: number }> = {};
+  userRating = 0;
+  userComment = '';
+  ratingError: string | null = null;
+  ratingSuccess = false;
 
-  constructor(private router: Router) {}
+  constructor(private router: Router, private weather: WeatherService, private ratingsSvc: RatingsService) {}
+  private roomChannel: any;
+  greetingMessage = '';
 
   async ngOnInit() {
     // Require logged-in user for booking actions
@@ -133,15 +213,41 @@ export class DashboardComponent implements OnInit {
           this.currentUsername = null;
         }
 
+        // Show greeting toast with day/date/time and weather
+        this.prepareGreetingToast();
+
         // Today string for date input min
         this.todayStr = new Date().toISOString().split('T')[0];
         // Load rooms from Supabase; if none, seed with defaults
-        await this.loadRoomsFromDb();
+  await this.loadRoomsFromDb();
+  // Load ratings summary for each room
+  this.loadRatings();
+
+        // Subscribe to realtime changes so UI auto-updates when booking via AI/chat
+        try {
+          this.roomChannel = supabase
+            .channel('rooms-realtime')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'rooms' }, (payload: any) => {
+              const row = payload.new ?? payload.old;
+              if (!row?.id) return;
+              const idx = this.rooms.findIndex(r => r.id === row.id);
+              if (idx >= 0 && payload.new) {
+                this.rooms[idx] = this.mapDbToRoom(payload.new);
+              } else if (idx === -1 && payload.new) {
+                this.rooms.push(this.mapDbToRoom(payload.new));
+              }
+            })
+            .subscribe();
+        } catch {}
       }
     } catch {
       this.currentUserId = null;
       this.router.navigate(['/login']);
     }
+  }
+
+  ngOnDestroy(): void {
+    try { this.roomChannel && supabase.removeChannel(this.roomChannel); } catch {}
   }
 
   // Logout moved to the global navbar
@@ -269,5 +375,58 @@ export class DashboardComponent implements OnInit {
       { id: 4, name: 'Queen Standard', image: 'assets/rooms/bed4.jpg', short: 'Comfortable and affordable', description: 'A comfortable queen room with all essentials for a pleasant stay at a great rate.', capacity: 2, status: 'available', bookedBy: null },
       { id: 5, name: 'Executive Suite', image: 'assets/rooms/bed5.jpg', short: 'Premium experience', description: 'Premium suite with a separate living area, workspace, and luxury amenities.', capacity: 3, status: 'available', bookedBy: null },
     ];
+  }
+
+  getAmenities(id: number): string[] {
+    return getRoomAmenities(id);
+  }
+
+  private async loadRatings() {
+    try {
+      for (const r of this.rooms) {
+        const sum = await this.ratingsSvc.getSummary(r.id);
+        this.ratings[r.id] = sum;
+      }
+    } catch {}
+  }
+
+  async submitRating(roomId: number) {
+    this.ratingError = null;
+    this.ratingSuccess = false;
+    if (!this.currentUserId) { this.ratingError = 'Please login to submit a rating.'; return; }
+    if (!this.userRating) { this.ratingError = 'Please choose a star rating.'; return; }
+    try {
+      await this.ratingsSvc.submit(roomId, this.currentUserId, this.userRating, this.userComment?.trim() || undefined);
+      // Refresh summary and reset feedback flag
+      this.ratings[roomId] = await this.ratingsSvc.getSummary(roomId);
+      this.ratingSuccess = true;
+      // Optionally reset comment
+      // this.userComment = '';
+    } catch {
+      this.ratingError = 'Could not submit your rating right now.';
+    }
+  }
+
+  private async prepareGreetingToast() {
+    try {
+      const now = new Date();
+      const hour = now.getHours();
+      const part = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+      const dt = new Intl.DateTimeFormat(undefined, { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }).format(now);
+      const wx = await this.weather.getCurrent();
+      const who = this.currentUsername || this.currentEmail || 'there';
+      const weatherStr = wx && wx.temperatureC != null
+        ? `${Math.round(wx.temperatureC)}°C, ${wx.description || 'Weather'}`
+        : 'weather unavailable';
+      this.greetingMessage = `${part}, ${who}. Today is ${dt}. Current weather: ${weatherStr}.`;
+      setTimeout(() => {
+        try {
+          const el = this.greetToastRef?.nativeElement;
+          if (!el) return;
+          const toast = new (window as any).bootstrap.Toast(el, { delay: 5000 });
+          toast.show();
+        } catch {}
+      }, 300);
+    } catch {}
   }
 }

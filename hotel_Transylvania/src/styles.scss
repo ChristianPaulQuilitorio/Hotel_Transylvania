@@ -4,12 +4,28 @@
 // For more information: https://material.angular.dev/guide/theming
 @use '@angular/material' as mat;
 
+/* Global brand colors — khaki aesthetic */
+:root {
+  /* Brand palette */
+  --brand-khaki: #bdb76b; /* dark khaki */
+  --brand-khaki-rgb: 189, 183, 107;
+  --brand-olive: #5a5a3a; /* supporting/dark text */
+  --brand-sand: #f5f1d6; /* soft light */
+  --brand-ivory: #fffdf4;
+
+  /* Bootstrap runtime variables */
+  --bs-primary: var(--brand-khaki);
+  --bs-primary-rgb: var(--brand-khaki-rgb);
+  --bs-link-color: #6b8e23; /* olive drab links */
+  --bs-link-hover-color: #556b2f;
+}
+
 html {
   @include mat.theme((
     color: (
       theme-type: light,
-      primary: mat.$azure-palette,
-      tertiary: mat.$blue-palette,
+  primary: mat.$yellow-palette,
+  tertiary: mat.$blue-palette,
     ),
     typography: Roboto,
     density: 0,
@@ -17,4 +33,134 @@ html {
 }/* You can add global styles to this file, and also import other style files */
 
 html, body { height: 100%; }
-body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+body { 
+  margin: 0; 
+  font-family: Roboto, "Helvetica Neue", sans-serif; 
+  background: linear-gradient(180deg, var(--brand-ivory) 0%, #faf9f0 40%, #ffffff 100%);
+}
+
+/* Make media responsive by default */
+img, svg, video, canvas { max-width: 100%; height: auto; }
+
+/* Angular Material toolbar primary override to khaki */
+.mat-toolbar.mat-primary {
+  --mat-toolbar-container-background-color: var(--brand-khaki);
+  --mat-toolbar-container-text-color: #1b1b1b;
+}
+
+/* Apply gradient only when not explicitly disabled */
+:root:not(.no-toolbar-gradient) .mat-toolbar.mat-primary {
+  background: linear-gradient(90deg, var(--brand-khaki), #a8a154) !important;
+}
+
+:root:not(.no-toolbar-gradient) .mat-toolbar.mat-primary:hover {
+  background: linear-gradient(90deg, #a39d4f, #908a44) !important;
+}
+
+/* Buttons (Bootstrap) to ensure khaki primary is crisp */
+.btn-primary {
+  --bs-btn-color: #1b1b1b;
+  --bs-btn-bg: var(--brand-khaki);
+  --bs-btn-border-color: var(--brand-khaki);
+  --bs-btn-hover-bg: #a8a154;
+  --bs-btn-hover-border-color: #a8a154;
+  --bs-btn-active-bg: #9a944b;
+  --bs-btn-active-border-color: #9a944b;
+}
+
+.btn-outline-primary {
+  --bs-btn-color: var(--brand-khaki);
+  --bs-btn-border-color: var(--brand-khaki);
+  --bs-btn-hover-bg: var(--brand-khaki);
+  --bs-btn-hover-border-color: var(--brand-khaki);
+  --bs-btn-hover-color: #1b1b1b;
+}
+
+/* Cards: slightly softer corners globally */
+.card { border-radius: 12px; overflow: hidden; }
+
+/* High contrast mode overrides */
+.hc {
+  --brand-khaki: #8b8b2b; /* darker for higher contrast */
+  --brand-khaki-rgb: 139, 139, 43;
+  --bs-link-color: #0f3d1f;
+  --bs-link-hover-color: #0b2c16;
+}
+
+.hc body { background: #fffef7; }
+.hc .mat-toolbar.mat-primary { background: linear-gradient(90deg, #7a7a24, #68681f) !important; }
+.hc .btn-primary { --bs-btn-bg: var(--brand-khaki); --bs-btn-border-color: var(--brand-khaki); }
+
+/* Skip link for keyboard users */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  background: #000;
+  color: #fff;
+  padding: .5rem .75rem;
+  z-index: 2000;
+}
+.skip-link:focus {
+  left: 0.5rem;
+  top: 0.5rem;
+  border-radius: 6px;
+}
+
+/* Strong, consistent focus ring */
+*:focus-visible {
+  outline: 3px solid #3b5; /* greenish highlight works with khaki */
+  outline-offset: 2px;
+}
+
+/* Respect reduced motion more broadly */
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
+
+/* Dark theme (toggle via .theme-dark on :root) */
+.theme-dark {
+  --brand-khaki: #c5b76b; /* keep accent warm */
+  --brand-khaki-rgb: 197, 183, 107;
+  --brand-olive: #d9d9c4; /* lighter text */
+  --brand-sand: #2b2b2b;
+  --brand-ivory: #1e1e1e;
+  --bs-link-color: #9acd32;
+  --bs-link-hover-color: #7fb02a;
+}
+
+.theme-dark body { background: linear-gradient(180deg, #161616 0%, #1b1b1b 40%, #202020 100%); color: #e7e7e7; }
+.theme-dark .mat-toolbar.mat-primary { 
+  --mat-toolbar-container-background-color: #2a2a2a; 
+  --mat-toolbar-container-text-color: #f2f2f2; 
+  background: #2a2a2a !important; 
+}
+:root.theme-dark:not(.no-toolbar-gradient) .mat-toolbar.mat-primary { background: linear-gradient(90deg, #2f2f2f, #3a3a3a) !important; }
+.theme-dark .btn-primary { --bs-btn-color: #111; --bs-btn-bg: var(--brand-khaki); --bs-btn-border-color: var(--brand-khaki); }
+.theme-dark .card { background-color: #262626; color: #e7e7e7; }
+
+/* Chat & offcanvas readability in dark mode */
+.theme-dark .offcanvas,
+.theme-dark .offcanvas-header,
+.theme-dark .offcanvas-body { background-color: #1b1b1b; color: #e7e7e7; }
+.theme-dark .btn-close { filter: invert(1) grayscale(100%); opacity: 0.8; }
+.theme-dark .btn-close:hover { opacity: 1; }
+.theme-dark .chat-messages { background: #141414 !important; border-color: #333 !important; }
+.theme-dark .chat-bubble.assistant { background: #2a2a2a !important; color: #eaeaea !important; }
+.theme-dark .chat-bubble.user { color: #111 !important; }
+.theme-dark .text-muted { color: #b5b5b5 !important; }
+.theme-dark .form-control { background: #1c1c1c; color: #e7e7e7; border-color: #3a3a3a; }
+.theme-dark .form-control::placeholder { color: #9aa0a6; }
+.theme-dark .btn-outline-secondary {
+  --bs-btn-color: #d0d0d0;
+  --bs-btn-border-color: #6a6a6a;
+  --bs-btn-hover-bg: #2a2a2a;
+  --bs-btn-hover-border-color: #7a7a7a;
+  --bs-btn-hover-color: #ffffff;
+}
+
+/* Toolbar hover affordance */
+.mat-toolbar button.mat-mdc-button:hover,
+.mat-toolbar a.mat-mdc-button:hover {
+  background: rgba(0,0,0,0.04);
+}

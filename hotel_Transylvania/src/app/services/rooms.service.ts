@@ -11,6 +11,19 @@ export type RoomDb = {
   short?: string | null;
 };
 
+// Local amenities catalog keyed by room id. Used in UI and chatbot answers.
+export const ROOM_AMENITIES: Record<number, string[]> = {
+  1: ['King bed', 'City view', 'Wi‑Fi', 'Air conditioning', 'Private bathroom', 'Smart TV', 'Complimentary breakfast'],
+  2: ['Two twin beds', 'Workspace', 'Wi‑Fi', 'Air conditioning', 'Mini fridge', 'Smart TV'],
+  3: ['Family capacity (4)', 'Extra bedding on request', 'Wi‑Fi', 'Air conditioning', 'Smart TV', 'Crib available'],
+  4: ['Queen bed', 'Wi‑Fi', 'Air conditioning', 'Private bathroom', 'Smart TV'],
+  5: ['Separate living area', 'Workspace', 'Wi‑Fi', 'Air conditioning', 'Nespresso machine', 'Smart TV', 'Premium toiletries'],
+};
+
+export function getRoomAmenities(id: number): string[] {
+  return ROOM_AMENITIES[id] ?? [];
+}
+
 export async function getRooms(): Promise<RoomDb[]> {
   const { data, error } = await supabase
     .from('rooms')

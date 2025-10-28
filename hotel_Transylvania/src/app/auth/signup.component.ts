@@ -38,15 +38,32 @@ declare const bootstrap: any;
                 <input class="form-control" [(ngModel)]="confirmPassword" name="confirmPassword" type="password" required />
               </div>
               <div class="form-check mb-2">
-                <input class="form-check-input" type="checkbox" [(ngModel)]="agree" name="agree" id="agree" />
-                <label class="form-check-label" for="agree">I agree to the <a href="#">Privacy Policy</a> and <a href="#">Terms</a>.</label>
+                <input class="form-check-input" type="checkbox" [(ngModel)]="agree" name="agree" id="agree" required />
+                <label class="form-check-label" for="agree">
+                  I agree to the
+                  <a href="#" role="button" data-bs-toggle="modal" data-bs-target="#legalModal">Privacy Policy</a>
+                  and
+                  <a href="#" role="button" data-bs-toggle="modal" data-bs-target="#legalModal">Terms</a>.
+                </label>
               </div>
               <div *ngIf="error" class="alert alert-danger">{{ error }}</div>
             </div>
             <div class="modal-footer">
-              <button class="btn btn-primary" type="submit">Create account</button>
+              <button class="btn btn-primary" type="submit" [disabled]="!agree || !email || !username || !password || (password !== confirmPassword)">Create account</button>
             </div>
           </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Success Toast -->
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1080">
+      <div #signupToast class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+          <div class="toast-body">
+            Account created successfully. Please verify your email via Gmail.
+          </div>
+          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
         </div>
       </div>
     </div>
@@ -54,6 +71,7 @@ declare const bootstrap: any;
 })
 export class SignupComponent implements AfterViewInit, OnDestroy {
   @ViewChild('signupModal', { static: true }) signupModalRef!: ElementRef<HTMLDivElement>;
+  @ViewChild('signupToast', { static: true }) signupToastRef!: ElementRef<HTMLDivElement>;
 
   private bsModal: any;
   private closedViaSuccess = false;
@@ -107,17 +125,19 @@ export class SignupComponent implements AfterViewInit, OnDestroy {
     const userId = (data as any)?.user?.id;
     if (userId) {
       try {
-        await supabase.from('profiles').insert({ id: userId, username: this.username, email: this.email });
+        await supabase
+          .from('profiles')
+          .upsert({ id: userId, username: this.username, email: this.email }, { onConflict: 'id', ignoreDuplicates: true });
       } catch (e) {
-        // ignore profile errors for now
-        console.warn('profile insert failed', e);
+        // ignore profile errors for now (RLS or network). Upsert reduces 409 conflicts.
+        console.warn('profile upsert failed', e);
       }
     }
 
-    // close modal and navigate to dashboard
+    // close modal and show success toast; keep user on landing to verify email
     this.closedViaSuccess = true;
     this.close();
-    this.router.navigate(['/dashboard']);
+    setTimeout(() => this.showSuccessToast(), 200);
   }
 
   ngAfterViewInit(): void {
@@ -131,5 +151,16 @@ export class SignupComponent implements AfterViewInit, OnDestroy {
         el.removeEventListener('hidden.bs.modal', this.hiddenHandler);
       }
     } catch {}
+  }
+
+  private showSuccessToast() {
+    try {
+      const el = this.signupToastRef?.nativeElement;
+      if (!el) return;
+      const toast = new (window as any).bootstrap.Toast(el, { delay: 4000 });
+      toast.show();
+    } catch {
+      // no-op if bootstrap toast unavailable
+    }
   }
 }

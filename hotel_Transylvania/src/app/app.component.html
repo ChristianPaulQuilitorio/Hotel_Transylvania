@@ -1,20 +1,99 @@
-<mat-toolbar color="primary">
-  <span class="ms-2">BookSmart</span>
-  <span style="flex:1 1 auto"></span>
-
-  <ng-container *ngIf="isAuthenticated; else loggedOut">
-    <span class="me-3">Hello, <strong>{{ username || email || 'User' }}</strong> — Welcome to HOTEL TRANSYLVANIA</span>
-    <button mat-button (click)="logout()">Logout</button>
-  </ng-container>
-  <ng-template #loggedOut>
-    <a mat-button routerLink="/login">Login</a>
-    <a mat-button routerLink="/signup">Sign up</a>
-  </ng-template>
+<a class="skip-link" href="#main-content">Skip to main content</a>
+<mat-toolbar color="primary" class="px-2">
+  <button mat-icon-button [matMenuTriggerFor]="mainMenu" aria-label="Open menu">
+    <mat-icon>menu</mat-icon>
+  </button>
+  <span class="ms-2 fw-medium">BookSmart</span>
+  <span class="flex-grow-1"></span>
 </mat-toolbar>
 
-<main class="p-3">
+<mat-menu #mainMenu="matMenu">
+  <button mat-menu-item routerLink="/dashboard" *ngIf="isAuthenticated">
+    <mat-icon>dashboard</mat-icon>
+    <span>Dashboard</span>
+  </button>
+  <button mat-menu-item routerLink="/settings">
+    <mat-icon>settings</mat-icon>
+    <span>Settings</span>
+  </button>
+  <button mat-menu-item (click)="toggleDarkMode()">
+    <mat-icon>{{ darkMode ? 'dark_mode' : 'light_mode' }}</mat-icon>
+    <span>{{ darkMode ? 'Switch to Khaki' : 'Switch to Dark' }}</span>
+  </button>
+  <mat-divider></mat-divider>
+  <button mat-menu-item (click)="logout()" *ngIf="isAuthenticated">
+    <mat-icon>logout</mat-icon>
+    <span>Logout</span>
+  </button>
+  <button mat-menu-item routerLink="/login" *ngIf="!isAuthenticated && !onLanding">
+    <mat-icon>login</mat-icon>
+    <span>Login</span>
+  </button>
+  <button mat-menu-item routerLink="/signup" *ngIf="!isAuthenticated && !onLanding">
+    <mat-icon>person_add</mat-icon>
+    <span>Sign up</span>
+  </button>
+</mat-menu>
+
+<main class="p-3" id="main-content">
   <router-outlet></router-outlet>
 </main>
+
+<!-- Footer with Privacy & Terms link -->
+<footer class="border-top small text-muted py-3 px-3 d-flex justify-content-between align-items-center">
+  <span>© {{ currentYear }} BookSmart</span>
+  <button *ngIf="!onLanding" class="btn btn-link p-0" data-bs-toggle="modal" data-bs-target="#legalModal">Privacy & Terms</button>
+  
+  <!-- Privacy & Terms Modal -->
+  <div class="modal fade" id="legalModal" tabindex="-1" aria-labelledby="legalModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="legalModalLabel">Privacy Policy and Terms of Service</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <h6 class="mb-2">Privacy Policy</h6>
+          <p class="mb-1"><strong>Effective date:</strong> {{ todayISO }}</p>
+          <p>
+            This Privacy Policy explains how BookSmart (“we”, “us”, “our”) collects, uses, and protects your
+            information when you use our application. By using BookSmart, you agree to this Policy.
+          </p>
+          <ul>
+            <li><strong>Information we collect:</strong> account details (e.g., email, username), booking details (room, dates), and basic device data (such as browser type).</li>
+            <li><strong>How we use it:</strong> to authenticate users, manage room availability and bookings, improve the service, and provide support.</li>
+            <li><strong>Storage & retention:</strong> data is stored with our cloud providers (e.g., Supabase). We retain data only as long as necessary for app functionality and legal obligations.</li>
+            <li><strong>Sharing:</strong> we don’t sell your data. We may share with service providers strictly to operate the app, or when required by law.</li>
+            <li><strong>Security:</strong> we use reasonable safeguards, but no system is 100% secure. Keep your credentials safe.</li>
+            <li><strong>Your choices:</strong> you can request access, correction, or deletion of your personal data subject to legal/technical limits.</li>
+            <li><strong>Contact:</strong> For privacy questions, contact our support team.</li>
+          </ul>
+
+          <hr class="my-3" />
+
+          <h6 class="mb-2">Terms of Service</h6>
+          <p>
+            These Terms govern your use of BookSmart. By accessing or using the app, you agree to be bound by them.
+          </p>
+          <ul>
+            <li><strong>Use of the Service:</strong> You must provide accurate information and comply with applicable laws.</li>
+            <li><strong>Accounts & security:</strong> You’re responsible for maintaining the confidentiality of your account and for all activities under it.</li>
+            <li><strong>Bookings & cancellations:</strong> Room availability is managed in-app. You may only cancel bookings you created. Abuse may result in account restrictions.</li>
+            <li><strong>Acceptable use:</strong> Don’t misuse the app, attempt unauthorized access, or interfere with others’ use.</li>
+            <li><strong>Intellectual property:</strong> App content and branding are owned by their respective rights holders.</li>
+            <li><strong>Disclaimer:</strong> The Service is provided “as is” without warranties of any kind.</li>
+            <li><strong>Limitation of liability:</strong> To the fullest extent permitted by law, we’re not liable for indirect or consequential damages.</li>
+            <li><strong>Changes:</strong> We may update these Terms and the Policy. Continued use after changes means you accept them.</li>
+            <li><strong>Contact:</strong> For Terms questions, contact our support team.</li>
+          </ul>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
 
 <app-chatbot></app-chatbot>
 

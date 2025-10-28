@@ -3,7 +3,11 @@ import { RouterOutlet } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatDividerModule } from '@angular/material/divider';
 import { Router, RouterLink } from '@angular/router';
+import { SettingsService } from './services/settings.service';
 import { supabase, signOut } from './services/supabase.service';
 import { ensureProfile } from './services/profiles.service';
 import { ChatbotComponent } from './chatbot/chatbot.component';
@@ -11,7 +15,7 @@ import { ChatbotComponent } from './chatbot/chatbot.component';
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, CommonModule, RouterLink, MatToolbarModule, MatButtonModule, ChatbotComponent],
+  imports: [RouterOutlet, CommonModule, RouterLink, MatToolbarModule, MatButtonModule, MatIconModule, MatMenuModule, MatDividerModule, ChatbotComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss'
 })
@@ -21,10 +25,26 @@ export class AppComponent implements OnInit, OnDestroy {
   private authSub: any;
   username: string | null = null;
   email: string | null = null;
+  currentYear: number = new Date().getFullYear();
+  todayISO: string = new Date().toISOString().slice(0, 10);
+  darkMode = false;
 
-  constructor(private router: Router) {}
+  get onLanding(): boolean {
+    try {
+      const path = this.router.url.split('?')[0];
+      return path === '/' || path === '/landing';
+    } catch {
+      return false;
+    }
+  }
+
+  constructor(private router: Router, private settings: SettingsService) {}
 
   async ngOnInit() {
+    // restore dark mode preference from settings
+    try {
+      this.darkMode = !!this.settings.get().highContrast;
+    } catch {}
     // initial check
     try {
       const { data } = await supabase.auth.getUser();
@@ -93,5 +113,10 @@ export class AppComponent implements OnInit, OnDestroy {
     this.email = null;
     // navigate to landing page
     this.router.navigateByUrl('/');
+  }
+
+  toggleDarkMode() {
+    this.darkMode = !this.darkMode;
+    this.settings.set({ highContrast: this.darkMode });
   }
 }
