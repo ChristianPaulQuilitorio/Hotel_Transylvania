@@ -87,7 +87,7 @@ Quick start (Git import):
 2. Go to https://vercel.com/new → Import your repository.
 3. Framework preset: Angular (detected automatically).
 4. Build command: `npm run build` (auto).
-5. Output directory: `dist/hotel-transylvania` (auto from `angular.json`).
+5. Output directory: `dist/hotel-transylvania/browser` (Angular Application builder emits to the `browser/` subfolder).
 6. Deploy → your site will be available at `https://<your-project>.vercel.app`.
 
 CLI deploy (optional):
