@@ -1,0 +1,60 @@
+{
+  "intents": [
+    {
+      "id": "booking_help",
+      "patterns": [
+        "how do i book",
+        "book a room",
+        "booking room"
+      ],
+      "answer": "To book a room:\n1) Log in (Login on the top-right).\n2) Go to the Dashboard and click a room.\n3) Pick a check-in date and choose 1–5 days.\n4) Click Avail to confirm. The room turns Booked and only you can Cancel it."
+    },
+    {
+      "id": "login_help",
+      "patterns": [
+        "how do i log in",
+        "login",
+        "sign up",
+        "create account"
+      ],
+      "answer": "Login/Signup:\n• Use the Login or Sign up buttons on the toolbar."
+    },
+    {
+      "id": "cancel_help",
+      "patterns": [
+        "how do i cancel",
+        "cancel booking",
+        "cancel my room"
+      ],
+      "answer": "Cancel a booking:\n• Open the room you booked, then click Cancel booking in the modal.\n• Only the person who booked the room can see and use Cancel."
+    },
+    {
+      "id": "rls_explain",
+      "patterns": [
+        "why can't i cancel",
+        "cannot cancel someone",
+        "other customer cancel"
+      ],
+      "answer": "Only the original booker can cancel a room. This is enforced by Row Level Security (RLS) in the database and by the UI."
+    },
+    {
+      "id": "days_limit",
+      "patterns": [
+        "how many days",
+        "days limit",
+        "book for 6",
+        "more than 5"
+      ],
+      "answer": "You can select 1–5 days per booking in the modal. Longer stays are not allowed in the current UI."
+    },
+    {
+      "id": "available_rooms_generic",
+      "patterns": [
+        "what rooms are available",
+        "available rooms",
+        "which rooms are free"
+      ],
+      "answer": "Available rooms are marked with the Available badge on the Dashboard grid (green). Booked rooms are labeled Booked."
+    }
+  ]
+}
