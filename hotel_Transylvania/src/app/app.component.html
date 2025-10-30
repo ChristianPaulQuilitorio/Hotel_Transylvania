@@ -21,6 +21,10 @@
     <mat-icon>help</mat-icon>
     <span>Help & Tutorial</span>
   </button>
+  <button mat-menu-item (click)="startTour()">
+    <mat-icon>tour</mat-icon>
+    <span>Take a tour</span>
+  </button>
   <button mat-menu-item (click)="toggleDarkMode()">
     <mat-icon>{{ darkMode ? 'dark_mode' : 'light_mode' }}</mat-icon>
     <span>{{ darkMode ? 'Switch to Khaki' : 'Switch to Dark' }}</span>

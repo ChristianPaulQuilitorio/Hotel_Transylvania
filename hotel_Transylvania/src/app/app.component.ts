@@ -205,4 +205,8 @@ export class AppComponent implements OnInit, OnDestroy {
       }
     } catch {}
   }
+
+  startTour() {
+    try { window.dispatchEvent(new CustomEvent('app:tour-start')); } catch {}
+  }
 }

@@ -24,4 +24,11 @@
     "strictInputAccessModifiers": true,
     "strictTemplates": true
   }
+  ,
+  "exclude": [
+    "supabase",
+    "tools",
+    "nlu",
+    "nlu-server"
+  ]
 }

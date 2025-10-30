@@ -482,8 +482,15 @@ export class DashboardComponent implements OnInit, OnDestroy {
       // Refresh summary and reset feedback flag
       this.ratings[roomId] = await this.ratingsSvc.getSummary(roomId);
       this.ratingSuccess = true;
-      // Optionally reset comment
+      // Close the modal so the user sees the updated card immediately
+      try { this.bsModal?.hide(); } catch {}
+      // Ensure the template updates (handle any change-detection edge cases)
+      try { this.cdr.detectChanges(); } catch {}
+      // Clear success message after a short delay
+      setTimeout(() => { try { this.ratingSuccess = false; this.cdr.detectChanges(); } catch {} }, 2400);
+      // Optionally reset comment and rating selection
       // this.userComment = '';
+      // this.userRating = 0;
     } catch {
       this.ratingError = 'Could not submit your rating right now.';
     }

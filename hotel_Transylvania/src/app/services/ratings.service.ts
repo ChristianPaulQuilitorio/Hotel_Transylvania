@@ -54,10 +54,14 @@ export class RatingsService {
     const rating = Math.max(1, Math.min(5, Math.round(stars)));
     // Try Supabase upsert on (room_id, user_id)
     try {
-      await supabase
+      const { data, error } = await supabase
         .from('ratings')
         .upsert({ room_id: roomId, user_id: userId, rating, comment }, { onConflict: 'room_id,user_id' });
-      return;
+      if (!error) {
+        return;
+      }
+      // If Supabase returned an error, fall through to local fallback
+      console.warn('Ratings upsert failed, falling back to localStorage', error);
     } catch {}
     // Fallback local storage (dedupe by room + user)
     const items = readLocal();

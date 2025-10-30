@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnDestroy, OnInit, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 interface Step { selector: string; title: string; body: string; centerCard?: boolean; }
@@ -50,6 +50,8 @@ export class TourComponent implements OnInit, OnDestroy {
   cardStyle: any = {};
   resizeHandler?: any;
 
+  constructor(private cd: ChangeDetectorRef) {}
+
   ngOnInit(): void {
     const onStart = () => this.start();
     window.addEventListener('app:tour-start', onStart as any);
@@ -79,6 +81,9 @@ export class TourComponent implements OnInit, OnDestroy {
       document.body.classList.remove('offcanvas-help-open');
     } catch {}
     this.active = true; this.index = 0; this.applyStep();
+    // OnPush component: ensure change detection runs because the event
+    // listener is outside Angular's zone.
+    try { this.cd.markForCheck(); } catch {}
     this.resizeHandler = () => this.applyStep();
     window.addEventListener('resize', this.resizeHandler);
     window.addEventListener('scroll', this.resizeHandler, true);
@@ -86,6 +91,8 @@ export class TourComponent implements OnInit, OnDestroy {
   stop() {
     document.body.classList.remove('tour-open');
     this.active = false; this.step = null;
+    // Ensure UI updates after stopping the tour
+    try { this.cd.markForCheck(); } catch {}
     window.removeEventListener('resize', this.resizeHandler as any);
     window.removeEventListener('scroll', this.resizeHandler as any, true);
   }
@@ -107,7 +114,7 @@ export class TourComponent implements OnInit, OnDestroy {
   const left = rectValid ? Math.max(8, (rect as DOMRect).left - pad) : fallbackLeft;
   const width = rectValid ? (rect as DOMRect).width + pad*2 : 80 + pad*2;
   const height = rectValid ? (rect as DOMRect).height + pad*2 : 48 + pad*2;
-    this.holeStyle = { top: top+'px', left: left+'px', width: width+'px', height: height+'px' };
+  this.holeStyle = { top: top+'px', left: left+'px', width: width+'px', height: height+'px' };
 
     // Position card: center for specific steps, otherwise below if space else above
     const cardW = 320, cardH = 160;
@@ -120,7 +127,9 @@ export class TourComponent implements OnInit, OnDestroy {
       if (cTop + cardH > window.innerHeight) cTop = top - cardH - 12;
       if (cLeft + cardW > window.innerWidth) cLeft = window.innerWidth - cardW - 12;
     }
-    this.cardStyle = { top: cTop+'px', left: cLeft+'px' };
+  this.cardStyle = { top: cTop+'px', left: cLeft+'px' };
+
+  try { this.cd.markForCheck(); } catch {}
 
     // After render, measure actual card size and clamp fully within viewport
     setTimeout(() => {
@@ -136,6 +145,7 @@ export class TourComponent implements OnInit, OnDestroy {
       if (cLeft2 + w > window.innerWidth - 12) cLeft2 = Math.max(12, window.innerWidth - w - 12);
       if (cLeft2 < 12) cLeft2 = 12;
       this.cardStyle = { top: cTop2+'px', left: cLeft2+'px' };
+      try { this.cd.markForCheck(); } catch {}
     }, 0);
   }
 }
