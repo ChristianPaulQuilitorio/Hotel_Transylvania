@@ -1,3 +1,10 @@
+// Logo styling for navbar and landing page
+.logo {
+  height: 40px; /* slightly larger for better visibility */
+  width: auto;
+  vertical-align: middle;
+  margin-right: 8px;
+}
 /* Make footer stick to bottom of viewport and allow main content to grow */
 :host {
 	display: flex;

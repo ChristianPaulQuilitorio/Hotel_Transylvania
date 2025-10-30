@@ -1,4 +1,4 @@
-import { Component, ElementRef, ViewChild, AfterViewInit, OnDestroy } from '@angular/core';
+import { Component, ElementRef, ViewChild, AfterViewInit, OnDestroy, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -10,6 +10,7 @@ declare const bootstrap: any;
   selector: 'app-signup',
   standalone: true,
   imports: [CommonModule, FormsModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <!-- Signup modal -->
     <div #signupModal class="modal fade" tabindex="-1" aria-hidden="true">
@@ -76,6 +77,8 @@ export class SignupComponent implements AfterViewInit, OnDestroy {
   private bsModal: any;
   private closedViaSuccess = false;
   private hiddenHandler?: () => void;
+  private pausedByOtherModal = false;
+  private legalHiddenHandler?: any;
 
   email = '';
   password = '';
@@ -91,6 +94,26 @@ export class SignupComponent implements AfterViewInit, OnDestroy {
     this.bsModal = new (window as any).bootstrap.Modal(el);
     const onHidden = () => {
       if (!this.closedViaSuccess) {
+        try {
+          // If another modal (e.g., the global legalModal) is open, do NOT redirect to landing.
+          // Instead, when the legal modal closes, reopen the signup modal so the user stays on signup.
+          const anyOpen = document.querySelectorAll('.modal.show').length > 0;
+          if (anyOpen) {
+            this.pausedByOtherModal = true;
+            const legal = document.getElementById('legalModal');
+            if (legal) {
+              this.legalHiddenHandler = () => {
+                try {
+                  // Re-open signup modal after legal modal closes
+                  setTimeout(() => this.open(), 50);
+                } catch {}
+                try { legal.removeEventListener('hidden.bs.modal', this.legalHiddenHandler); } catch {}
+              };
+              legal.addEventListener('hidden.bs.modal', this.legalHiddenHandler);
+            }
+            return;
+          }
+        } catch (e) {}
         this.router.navigate(['/']);
       }
     };
@@ -134,10 +157,11 @@ export class SignupComponent implements AfterViewInit, OnDestroy {
       }
     }
 
-    // close modal and show success toast; keep user on landing to verify email
-    this.closedViaSuccess = true;
-    this.close();
-    setTimeout(() => this.showSuccessToast(), 200);
+  // close modal and redirect user to login route so they can sign in after verifying email
+  // pass a query param so the Login modal can show a success message/toast
+  this.closedViaSuccess = true;
+  this.close();
+  setTimeout(() => this.router.navigate(['/login'], { queryParams: { signup: '1' } }), 200);
   }
 
   ngAfterViewInit(): void {
@@ -149,6 +173,12 @@ export class SignupComponent implements AfterViewInit, OnDestroy {
       const el = this.signupModalRef?.nativeElement;
       if (el && this.hiddenHandler) {
         el.removeEventListener('hidden.bs.modal', this.hiddenHandler);
+      }
+    } catch {}
+    try {
+      const legal = document.getElementById('legalModal');
+      if (legal && this.legalHiddenHandler) {
+        legal.removeEventListener('hidden.bs.modal', this.legalHiddenHandler);
       }
     } catch {}
   }

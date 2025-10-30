@@ -33,7 +33,7 @@
               {
                 "glob": "**/*",
                 "input": "Assets",
-                "output": "/assets/rooms"
+                "output": "assets/rooms"
               }
             ],
             "styles": [

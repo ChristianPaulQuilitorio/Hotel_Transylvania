@@ -1,4 +1,5 @@
-import { Component, ElementRef, ViewChild, AfterViewInit, OnDestroy } from '@angular/core';
+import { Component, ElementRef, ViewChild, AfterViewInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -8,6 +9,7 @@ import { signIn } from '../services/supabase.service';
   selector: 'app-login',
   standalone: true,
   imports: [CommonModule, FormsModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <!-- Bootstrap modal for login -->
     <div #loginModal class="modal fade" tabindex="-1" aria-hidden="true">
@@ -27,6 +29,7 @@ import { signIn } from '../services/supabase.service';
                 <label class="form-label">Password</label>
                 <input class="form-control" [(ngModel)]="password" name="password" type="password" required />
               </div>
+              <div *ngIf="successMessage" class="alert alert-success">{{ successMessage }}</div>
               <div *ngIf="error" class="alert alert-danger">{{ error }}</div>
             </div>
             <div class="modal-footer">
@@ -43,6 +46,7 @@ export class LoginComponent implements AfterViewInit, OnDestroy {
   email = '';
   password = '';
   error: string | null = null;
+  successMessage: string | null = null;
 
   @ViewChild('loginModal', { static: true }) loginModalRef!: ElementRef<HTMLDivElement>;
 
@@ -50,7 +54,7 @@ export class LoginComponent implements AfterViewInit, OnDestroy {
   private closedViaSuccess = false;
   private hiddenHandler?: () => void;
 
-  constructor(private router: Router) {}
+  constructor(private router: Router, private route: ActivatedRoute, private cdr: ChangeDetectorRef) {}
 
   open() {
     // ensure modal instance
@@ -91,8 +95,19 @@ export class LoginComponent implements AfterViewInit, OnDestroy {
   }
 
   ngAfterViewInit(): void {
+    // Show success message when redirected after signup, then auto-open modal
+    const signup = this.route.snapshot.queryParamMap.get('signup');
+    if (signup) {
+      this.successMessage = 'Account created successfully. Please verify your email before signing in.';
+      // Clear any existing chat history for first-time signups so Drac starts fresh
+      try { localStorage.removeItem('chat_history'); } catch {}
+    }
     // Auto-open when navigated to via route
-    setTimeout(() => this.open());
+    setTimeout(() => {
+      this.open();
+      // ensure OnPush notices the successMessage
+      this.cdr.markForCheck();
+    });
   }
 
   ngOnDestroy(): void {

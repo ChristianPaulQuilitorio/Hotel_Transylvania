@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { supabase } from '../services/supabase.service';
@@ -8,8 +8,10 @@ import { RatingsService } from '../services/ratings.service';
   selector: 'app-landing',
   standalone: true,
   imports: [CommonModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="container text-center mt-5">
+      <img src="assets/rooms/Logo.png" alt="BookSmart Logo" class="landing-logo mx-auto mb-3" />
       <h1>Welcome to BookSmart</h1>
       <p class="lead">BookSmart not Harder.</p>
       <div class="mt-4">
@@ -49,6 +51,7 @@ import { RatingsService } from '../services/ratings.service';
     </section>
   `,
   styles: [`
+  .landing-logo { width: 140px; height: auto; display: block; margin-left: auto; margin-right: auto; }
     .scroller { 
       overflow: hidden; 
       position: relative; 
@@ -94,7 +97,7 @@ import { RatingsService } from '../services/ratings.service';
   `]
 })
 export class LandingComponent implements OnInit {
-  constructor(private router: Router, private ratingsSvc: RatingsService) {}
+  constructor(private router: Router, private ratingsSvc: RatingsService, private cdr: ChangeDetectorRef) {}
 
   featured = [
     { id: 1, name: 'Deluxe King', image: 'assets/rooms/bed1.jpg', short: 'Spacious room with king bed', capacity: 2 },
@@ -130,10 +133,14 @@ export class LandingComponent implements OnInit {
 
   private async loadRatings() {
     try {
-      for (const r of this.featured) {
-        const sum = await this.ratingsSvc.getSummary(r.id);
-        this.ratings[r.id] = sum;
-      }
+      // Fetch summaries in parallel for speed and update the view when done.
+      const results = await Promise.all(this.featured.map(r => this.ratingsSvc.getSummary(r.id)));
+      results.forEach((sum, idx) => {
+        const id = this.featured[idx].id;
+        this.ratings[id] = sum;
+      });
+      // OnPush needs an explicit check to update the template
+      try { this.cdr.markForCheck(); } catch {}
     } catch {}
   }
 

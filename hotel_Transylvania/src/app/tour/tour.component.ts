@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 interface Step { selector: string; title: string; body: string; centerCard?: boolean; }
@@ -7,6 +7,7 @@ interface Step { selector: string; title: string; body: string; centerCard?: boo
   standalone: true,
   selector: 'app-tour',
   imports: [CommonModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   styles: [`
   .tour-overlay { position: fixed; inset: 0; background: transparent; z-index: 1059; }
   .tour-hole { position: fixed; z-index: 1060; border: 2px solid #fff; border-radius: 10px; box-shadow: 0 0 0 9999px rgba(0,0,0,.55); pointer-events: auto; }

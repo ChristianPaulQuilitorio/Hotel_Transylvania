@@ -1,0 +1,1814 @@
+{
+  "settings": {
+    "languages": [
+      "en"
+    ],
+    "forceNER": true,
+    "tag": "nlp",
+    "threshold": 0.5,
+    "autoLoad": true,
+    "autoSave": true,
+    "modelFileName": "model.nlp",
+    "executeActionsBeforeAnswers": false,
+    "calculateSentiment": true
+  },
+  "nluManager": {
+    "settings": {
+      "tag": "nlu-manager"
+    },
+    "locales": [
+      "en"
+    ],
+    "languageNames": {},
+    "domainManagers": {
+      "en": {
+        "settings": {
+          "locale": "en",
+          "trainByDomain": false,
+          "tag": "domain-manager-en",
+          "nluByDomain": {
+            "default": {
+              "className": "NeuralNlu",
+              "settings": {}
+            }
+          },
+          "useStemDict": true
+        },
+        "stemDict": {
+          "hi": {
+            "intent": "greeting",
+            "domain": "default"
+          },
+          "hello": {
+            "intent": "greeting",
+            "domain": "default"
+          },
+          "hey": {
+            "intent": "greeting",
+            "domain": "default"
+          },
+          "good,morn": {
+            "intent": "greeting",
+            "domain": "default"
+          },
+          "afternoon,good": {
+            "intent": "greeting",
+            "domain": "default"
+          },
+          "hola": {
+            "intent": "greeting",
+            "domain": "default"
+          },
+          "bonjour": {
+            "intent": "greeting",
+            "domain": "default"
+          },
+          "howdi": {
+            "intent": "greeting",
+            "domain": "default"
+          },
+          "is,up,what": {
+            "intent": "greeting",
+            "domain": "default"
+          },
+          "a,book,i,room,to,want": {
+            "intent": "book",
+            "domain": "default"
+          },
+          "a,book,room": {
+            "intent": "book",
+            "domain": "default"
+          },
+          "for,reserv,room,tomorrow": {
+            "intent": "book",
+            "domain": "default"
+          },
+          "a,book,do,how,i,room": {
+            "intent": "book",
+            "domain": "default"
+          },
+          "a,can,help,me,reserv,room,you": {
+            "intent": "book",
+            "domain": "default"
+          },
+          "2,a,for,i,need,peopl,room": {
+            "intent": "book",
+            "domain": "default"
+          },
+          "book,cancel,my": {
+            "intent": "cancel",
+            "domain": "default"
+          },
+          "cancel,i,my,reserv,to,want": {
+            "intent": "cancel",
+            "domain": "default"
+          },
+          "a,book,cancel,do,how,i": {
+            "intent": "cancel",
+            "domain": "default"
+          },
+          "book,my,remov": {
+            "intent": "cancel",
+            "domain": "default"
+          },
+          "2,book,cancel,for,room": {
+            "intent": "cancel",
+            "domain": "default"
+          },
+          "2,2025-11-03,avail,is,on,room": {
+            "intent": "availability",
+            "domain": "default"
+          },
+          "are,avail,room,tomorrow,which": {
+            "intent": "availability",
+            "domain": "default"
+          },
+          "avail,room,today": {
+            "intent": "availability",
+            "domain": "default"
+          },
+          "2025-10-31,are,free,on,room,what": {
+            "intent": "availability",
+            "domain": "default"
+          },
+          "ani,are,there,tomorrow,vacanc": {
+            "intent": "availability",
+            "domain": "default"
+          },
+          "do,have,room,what,you": {
+            "intent": "list_rooms",
+            "domain": "default"
+          },
+          "list,room": {
+            "intent": "list_rooms",
+            "domain": "default"
+          },
+          "avail,me,room,show,type": {
+            "intent": "list_rooms",
+            "domain": "default"
+          },
+          "are,room,type,what,your": {
+            "intent": "list_rooms",
+            "domain": "default"
+          },
+          "amen": {
+            "intent": "list_rooms",
+            "domain": "default"
+          },
+          "do,how,i,in,log": {
+            "intent": "login_help",
+            "domain": "default"
+          },
+          "login": {
+            "intent": "login_help",
+            "domain": "default"
+          },
+          "in,sign": {
+            "intent": "login_help",
+            "domain": "default"
+          },
+          "ca,i,in,log,not": {
+            "intent": "login_help",
+            "domain": "default"
+          },
+          "how,sign,to,up": {
+            "intent": "login_help",
+            "domain": "default"
+          },
+          "book,can,day,how,i,mani": {
+            "intent": "days_limit",
+            "domain": "default"
+          },
+          "6,book,can,day,for,i": {
+            "intent": "days_limit",
+            "domain": "default"
+          },
+          "day,limit": {
+            "intent": "days_limit",
+            "domain": "default"
+          },
+          "length,maximum,stay": {
+            "intent": "days_limit",
+            "domain": "default"
+          },
+          "book,ca,cancel,i,is,not,other,whi": {
+            "intent": "rls_explain",
+            "domain": "default"
+          },
+          "ca,cancel,i,not,whi": {
+            "intent": "rls_explain",
+            "domain": "default"
+          },
+          "a,book,can,cancel,who": {
+            "intent": "rls_explain",
+            "domain": "default"
+          },
+          "book,ca,cancel,els,my,not,someon,whi": {
+            "intent": "rls_explain",
+            "domain": "default"
+          }
+        },
+        "intentDict": {
+          "greeting": "default",
+          "book": "default",
+          "cancel": "default",
+          "availability": "default",
+          "list_rooms": "default",
+          "login_help": "default",
+          "days_limit": "default",
+          "rls_explain": "default"
+        },
+        "sentences": [
+          {
+            "domain": "default",
+            "utterance": "hi",
+            "intent": "greeting"
+          },
+          {
+            "domain": "default",
+            "utterance": "hello",
+            "intent": "greeting"
+          },
+          {
+            "domain": "default",
+            "utterance": "hey",
+            "intent": "greeting"
+          },
+          {
+            "domain": "default",
+            "utterance": "good morning",
+            "intent": "greeting"
+          },
+          {
+            "domain": "default",
+            "utterance": "good afternoon",
+            "intent": "greeting"
+          },
+          {
+            "domain": "default",
+            "utterance": "hola",
+            "intent": "greeting"
+          },
+          {
+            "domain": "default",
+            "utterance": "bonjour",
+            "intent": "greeting"
+          },
+          {
+            "domain": "default",
+            "utterance": "howdy",
+            "intent": "greeting"
+          },
+          {
+            "domain": "default",
+            "utterance": "what's up",
+            "intent": "greeting"
+          },
+          {
+            "domain": "default",
+            "utterance": "I want to book a room",
+            "intent": "book"
+          },
+          {
+            "domain": "default",
+            "utterance": "book a room",
+            "intent": "book"
+          },
+          {
+            "domain": "default",
+            "utterance": "reserve room for tomorrow",
+            "intent": "book"
+          },
+          {
+            "domain": "default",
+            "utterance": "how do I book a room",
+            "intent": "book"
+          },
+          {
+            "domain": "default",
+            "utterance": "can you help me reserve a room",
+            "intent": "book"
+          },
+          {
+            "domain": "default",
+            "utterance": "I need a room for 2 people",
+            "intent": "book"
+          },
+          {
+            "domain": "default",
+            "utterance": "cancel my booking",
+            "intent": "cancel"
+          },
+          {
+            "domain": "default",
+            "utterance": "I want to cancel my reservation",
+            "intent": "cancel"
+          },
+          {
+            "domain": "default",
+            "utterance": "how do I cancel a booking",
+            "intent": "cancel"
+          },
+          {
+            "domain": "default",
+            "utterance": "remove my booking",
+            "intent": "cancel"
+          },
+          {
+            "domain": "default",
+            "utterance": "cancel booking for room 2",
+            "intent": "cancel"
+          },
+          {
+            "domain": "default",
+            "utterance": "is room 2 available on 2025-11-03",
+            "intent": "availability"
+          },
+          {
+            "domain": "default",
+            "utterance": "which rooms are available tomorrow",
+            "intent": "availability"
+          },
+          {
+            "domain": "default",
+            "utterance": "available rooms today",
+            "intent": "availability"
+          },
+          {
+            "domain": "default",
+            "utterance": "what rooms are free on 2025-10-31",
+            "intent": "availability"
+          },
+          {
+            "domain": "default",
+            "utterance": "are there any vacancies tomorrow",
+            "intent": "availability"
+          },
+          {
+            "domain": "default",
+            "utterance": "what rooms do you have",
+            "intent": "list_rooms"
+          },
+          {
+            "domain": "default",
+            "utterance": "list rooms",
+            "intent": "list_rooms"
+          },
+          {
+            "domain": "default",
+            "utterance": "show me available room types",
+            "intent": "list_rooms"
+          },
+          {
+            "domain": "default",
+            "utterance": "what are your room types",
+            "intent": "list_rooms"
+          },
+          {
+            "domain": "default",
+            "utterance": "amenities",
+            "intent": "list_rooms"
+          },
+          {
+            "domain": "default",
+            "utterance": "how do I log in",
+            "intent": "login_help"
+          },
+          {
+            "domain": "default",
+            "utterance": "login",
+            "intent": "login_help"
+          },
+          {
+            "domain": "default",
+            "utterance": "sign in",
+            "intent": "login_help"
+          },
+          {
+            "domain": "default",
+            "utterance": "I can't log in",
+            "intent": "login_help"
+          },
+          {
+            "domain": "default",
+            "utterance": "how to sign up",
+            "intent": "login_help"
+          },
+          {
+            "domain": "default",
+            "utterance": "how many days can I book",
+            "intent": "days_limit"
+          },
+          {
+            "domain": "default",
+            "utterance": "can I book for 6 days",
+            "intent": "days_limit"
+          },
+          {
+            "domain": "default",
+            "utterance": "days limit",
+            "intent": "days_limit"
+          },
+          {
+            "domain": "default",
+            "utterance": "maximum stay length",
+            "intent": "days_limit"
+          },
+          {
+            "domain": "default",
+            "utterance": "why can't I cancel other's bookings",
+            "intent": "rls_explain"
+          },
+          {
+            "domain": "default",
+            "utterance": "why can't I cancel",
+            "intent": "rls_explain"
+          },
+          {
+            "domain": "default",
+            "utterance": "who can cancel a booking",
+            "intent": "rls_explain"
+          },
+          {
+            "domain": "default",
+            "utterance": "why can't someone else cancel my booking",
+            "intent": "rls_explain"
+          }
+        ],
+        "domains": {
+          "master_domain": {
+            "settings": {
+              "locale": "en",
+              "tag": "nlu-en",
+              "keepStopwords": true,
+              "nonefeatureValue": 1,
+              "nonedeltaMultiplier": 1.2,
+              "spellCheck": false,
+              "spellCheckDistance": 1,
+              "filterZeros": true,
+              "log": true
+            },
+            "features": {
+              "2": 1,
+              "6": 1,
+              "hi": 1,
+              "hello": 1,
+              "hey": 1,
+              "good": 1,
+              "morn": 1,
+              "afternoon": 1,
+              "hola": 1,
+              "bonjour": 1,
+              "howdi": 1,
+              "what": 1,
+              "is": 1,
+              "up": 1,
+              "i": 1,
+              "want": 1,
+              "to": 1,
+              "book": 1,
+              "a": 1,
+              "room": 1,
+              "reserv": 1,
+              "for": 1,
+              "tomorrow": 1,
+              "how": 1,
+              "do": 1,
+              "can": 1,
+              "you": 1,
+              "help": 1,
+              "me": 1,
+              "need": 1,
+              "peopl": 1,
+              "cancel": 1,
+              "my": 1,
+              "remov": 1,
+              "avail": 1,
+              "on": 1,
+              "2025-11-03": 1,
+              "which": 1,
+              "are": 1,
+              "today": 1,
+              "free": 1,
+              "2025-10-31": 1,
+              "there": 1,
+              "ani": 1,
+              "vacanc": 1,
+              "have": 1,
+              "list": 1,
+              "show": 1,
+              "type": 1,
+              "your": 1,
+              "amen": 1,
+              "log": 1,
+              "in": 1,
+              "login": 1,
+              "sign": 1,
+              "ca": 1,
+              "not": 1,
+              "mani": 1,
+              "day": 1,
+              "limit": 1,
+              "maximum": 1,
+              "stay": 1,
+              "length": 1,
+              "whi": 1,
+              "other": 1,
+              "who": 1,
+              "someon": 1,
+              "els": 1
+            },
+            "intents": {
+              "greeting": 1,
+              "book": 1,
+              "cancel": 1,
+              "availability": 1,
+              "list_rooms": 1,
+              "login_help": 1,
+              "days_limit": 1,
+              "rls_explain": 1
+            },
+            "intentFeatures": {
+              "greeting": {
+                "hi": 1,
+                "hello": 1,
+                "hey": 1,
+                "good": 1,
+                "morn": 1,
+                "afternoon": 1,
+                "hola": 1,
+                "bonjour": 1,
+                "howdi": 1,
+                "what": 1,
+                "is": 1,
+                "up": 1
+              },
+              "book": {
+                "2": 1,
+                "i": 1,
+                "want": 1,
+                "to": 1,
+                "book": 1,
+                "a": 1,
+                "room": 1,
+                "reserv": 1,
+                "for": 1,
+                "tomorrow": 1,
+                "how": 1,
+                "do": 1,
+                "can": 1,
+                "you": 1,
+                "help": 1,
+                "me": 1,
+                "need": 1,
+                "peopl": 1
+              },
+              "cancel": {
+                "2": 1,
+                "cancel": 1,
+                "my": 1,
+                "book": 1,
+                "i": 1,
+                "want": 1,
+                "to": 1,
+                "reserv": 1,
+                "how": 1,
+                "do": 1,
+                "a": 1,
+                "remov": 1,
+                "for": 1,
+                "room": 1
+              },
+              "availability": {
+                "2": 1,
+                "is": 1,
+                "room": 1,
+                "avail": 1,
+                "on": 1,
+                "2025-11-03": 1,
+                "which": 1,
+                "are": 1,
+                "tomorrow": 1,
+                "today": 1,
+                "what": 1,
+                "free": 1,
+                "2025-10-31": 1,
+                "there": 1,
+                "ani": 1,
+                "vacanc": 1
+              },
+              "list_rooms": {
+                "what": 1,
+                "room": 1,
+                "do": 1,
+                "you": 1,
+                "have": 1,
+                "list": 1,
+                "show": 1,
+                "me": 1,
+                "avail": 1,
+                "type": 1,
+                "are": 1,
+                "your": 1,
+                "amen": 1
+              },
+              "login_help": {
+                "how": 1,
+                "do": 1,
+                "i": 1,
+                "log": 1,
+                "in": 1,
+                "login": 1,
+                "sign": 1,
+                "ca": 1,
+                "not": 1,
+                "to": 1,
+                "up": 1
+              },
+              "days_limit": {
+                "6": 1,
+                "how": 1,
+                "mani": 1,
+                "day": 1,
+                "can": 1,
+                "i": 1,
+                "book": 1,
+                "for": 1,
+                "limit": 1,
+                "maximum": 1,
+                "stay": 1,
+                "length": 1
+              },
+              "rls_explain": {
+                "whi": 1,
+                "ca": 1,
+                "not": 1,
+                "i": 1,
+                "cancel": 1,
+                "other": 1,
+                "is": 1,
+                "book": 1,
+                "who": 1,
+                "can": 1,
+                "a": 1,
+                "someon": 1,
+                "els": 1,
+                "my": 1
+              }
+            },
+            "featuresToIntent": {
+              "2": [
+                "book",
+                "cancel",
+                "availability"
+              ],
+              "6": [
+                "days_limit"
+              ],
+              "hi": [
+                "greeting"
+              ],
+              "hello": [
+                "greeting"
+              ],
+              "hey": [
+                "greeting"
+              ],
+              "good": [
+                "greeting"
+              ],
+              "morn": [
+                "greeting"
+              ],
+              "afternoon": [
+                "greeting"
+              ],
+              "hola": [
+                "greeting"
+              ],
+              "bonjour": [
+                "greeting"
+              ],
+              "howdi": [
+                "greeting"
+              ],
+              "what": [
+                "greeting",
+                "availability",
+                "list_rooms"
+              ],
+              "is": [
+                "greeting",
+                "availability",
+                "rls_explain"
+              ],
+              "up": [
+                "greeting",
+                "login_help"
+              ],
+              "i": [
+                "book",
+                "cancel",
+                "login_help",
+                "days_limit",
+                "rls_explain"
+              ],
+              "want": [
+                "book",
+                "cancel"
+              ],
+              "to": [
+                "book",
+                "cancel",
+                "login_help"
+              ],
+              "book": [
+                "book",
+                "cancel",
+                "days_limit",
+                "rls_explain"
+              ],
+              "a": [
+                "book",
+                "cancel",
+                "rls_explain"
+              ],
+              "room": [
+                "book",
+                "cancel",
+                "availability",
+                "list_rooms"
+              ],
+              "reserv": [
+                "book",
+                "cancel"
+              ],
+              "for": [
+                "book",
+                "cancel",
+                "days_limit"
+              ],
+              "tomorrow": [
+                "book",
+                "availability"
+              ],
+              "how": [
+                "book",
+                "cancel",
+                "login_help",
+                "days_limit"
+              ],
+              "do": [
+                "book",
+                "cancel",
+                "list_rooms",
+                "login_help"
+              ],
+              "can": [
+                "book",
+                "days_limit",
+                "rls_explain"
+              ],
+              "you": [
+                "book",
+                "list_rooms"
+              ],
+              "help": [
+                "book"
+              ],
+              "me": [
+                "book",
+                "list_rooms"
+              ],
+              "need": [
+                "book"
+              ],
+              "peopl": [
+                "book"
+              ],
+              "cancel": [
+                "cancel",
+                "rls_explain"
+              ],
+              "my": [
+                "cancel",
+                "rls_explain"
+              ],
+              "remov": [
+                "cancel"
+              ],
+              "avail": [
+                "availability",
+                "list_rooms"
+              ],
+              "on": [
+                "availability"
+              ],
+              "2025-11-03": [
+                "availability"
+              ],
+              "which": [
+                "availability"
+              ],
+              "are": [
+                "availability",
+                "list_rooms"
+              ],
+              "today": [
+                "availability"
+              ],
+              "free": [
+                "availability"
+              ],
+              "2025-10-31": [
+                "availability"
+              ],
+              "there": [
+                "availability"
+              ],
+              "ani": [
+                "availability"
+              ],
+              "vacanc": [
+                "availability"
+              ],
+              "have": [
+                "list_rooms"
+              ],
+              "list": [
+                "list_rooms"
+              ],
+              "show": [
+                "list_rooms"
+              ],
+              "type": [
+                "list_rooms"
+              ],
+              "your": [
+                "list_rooms"
+              ],
+              "amen": [
+                "list_rooms"
+              ],
+              "log": [
+                "login_help"
+              ],
+              "in": [
+                "login_help"
+              ],
+              "login": [
+                "login_help"
+              ],
+              "sign": [
+                "login_help"
+              ],
+              "ca": [
+                "login_help",
+                "rls_explain"
+              ],
+              "not": [
+                "login_help",
+                "rls_explain"
+              ],
+              "mani": [
+                "days_limit"
+              ],
+              "day": [
+                "days_limit"
+              ],
+              "limit": [
+                "days_limit"
+              ],
+              "maximum": [
+                "days_limit"
+              ],
+              "stay": [
+                "days_limit"
+              ],
+              "length": [
+                "days_limit"
+              ],
+              "whi": [
+                "rls_explain"
+              ],
+              "other": [
+                "rls_explain"
+              ],
+              "who": [
+                "rls_explain"
+              ],
+              "someon": [
+                "rls_explain"
+              ],
+              "els": [
+                "rls_explain"
+              ]
+            },
+            "neuralNetwork": {
+              "settings": {
+                "locale": "en",
+                "tag": "nlu-en",
+                "keepStopwords": true,
+                "nonefeatureValue": 1,
+                "nonedeltaMultiplier": 1.2,
+                "spellCheck": false,
+                "spellCheckDistance": 1,
+                "filterZeros": true,
+                "log": true
+              },
+              "features": [
+                "hi",
+                "hello",
+                "hey",
+                "good",
+                "morn",
+                "afternoon",
+                "hola",
+                "bonjour",
+                "howdi",
+                "what",
+                "is",
+                "up",
+                "i",
+                "want",
+                "to",
+                "book",
+                "a",
+                "room",
+                "reserv",
+                "for",
+                "tomorrow",
+                "how",
+                "do",
+                "can",
+                "you",
+                "help",
+                "me",
+                "2",
+                "need",
+                "peopl",
+                "cancel",
+                "my",
+                "remov",
+                "avail",
+                "on",
+                "2025-11-03",
+                "which",
+                "are",
+                "today",
+                "free",
+                "2025-10-31",
+                "there",
+                "ani",
+                "vacanc",
+                "have",
+                "list",
+                "show",
+                "type",
+                "your",
+                "amen",
+                "log",
+                "in",
+                "login",
+                "sign",
+                "ca",
+                "not",
+                "mani",
+                "day",
+                "6",
+                "limit",
+                "maximum",
+                "stay",
+                "length",
+                "whi",
+                "other",
+                "who",
+                "someon",
+                "els"
+              ],
+              "intents": [
+                "greeting",
+                "book",
+                "cancel",
+                "availability",
+                "list_rooms",
+                "login_help",
+                "days_limit",
+                "rls_explain"
+              ],
+              "perceptrons": [
+                [
+                  6.9891228675842285,
+                  6.997319221496582,
+                  6.98022985458374,
+                  4.689324855804443,
+                  2.3470544815063477,
+                  2.342594861984253,
+                  6.958527088165283,
+                  6.938269138336182,
+                  6.916769504547119,
+                  2.0786805152893066,
+                  3.0234832763671875,
+                  1.9145601987838745,
+                  -2.3860692977905273,
+                  -0.562611997127533,
+                  -2.521751642227173,
+                  -3.40103816986084,
+                  -1.3606650829315186,
+                  -6.099857330322266,
+                  -0.9877039194107056,
+                  -0.5358597040176392,
+                  -1.7984440326690674,
+                  -2.4766552448272705,
+                  -1.4058092832565308,
+                  -0.3130318820476532,
+                  -1.051396369934082,
+                  -0.1599368155002594,
+                  -0.26315802335739136,
+                  -0.868611752986908,
+                  -0.0490485318005085,
+                  -0.0490485318005085,
+                  -2.0963988304138184,
+                  -2.6275596618652344,
+                  -1.3040523529052734,
+                  -1.4280866384506226,
+                  -1.1626245975494385,
+                  -0.7558475136756897,
+                  -0.11938077956438065,
+                  -2.2174253463745117,
+                  -0.4100272059440613,
+                  -0.34443286061286926,
+                  -0.34443286061286926,
+                  -1.1120944023132324,
+                  -1.1120944023132324,
+                  -1.1120944023132324,
+                  -0.8143185377120972,
+                  -1.1822391748428345,
+                  -0.03860997408628464,
+                  -0.5451751351356506,
+                  -0.49693480134010315,
+                  -7.0949273109436035,
+                  -0.7731068134307861,
+                  -3.0767743587493896,
+                  -7.062500476837158,
+                  -4.164419651031494,
+                  -1.0599489212036133,
+                  -1.0599489212036133,
+                  0,
+                  -3.6199262142181396,
+                  0,
+                  -3.6199262142181396,
+                  -2.4149844646453857,
+                  -2.4149844646453857,
+                  -2.4149844646453857,
+                  -0.6450383067131042,
+                  -0.009838748723268509,
+                  -0.07595241814851761,
+                  0,
+                  0,
+                  7.248113044669943
+                ],
+                [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  -1.8025504350662231,
+                  -0.533668577671051,
+                  -0.04570828378200531,
+                  0.05093943700194359,
+                  0.018272921442985535,
+                  -0.034178175032138824,
+                  2.380824089050293,
+                  7.517792701721191,
+                  5.696934700012207,
+                  4.363052845001221,
+                  2.505141258239746,
+                  3.030853033065796,
+                  0.2745670676231384,
+                  -0.5667681694030762,
+                  -1.5110589265823364,
+                  -0.810448408126831,
+                  0.40913036465644836,
+                  -0.0958995446562767,
+                  -1.7886818647384644,
+                  0.7898566126823425,
+                  0.7898566126823425,
+                  -8.217035293579102,
+                  -1.333848237991333,
+                  -0.27998802065849304,
+                  -3.6836600303649902,
+                  -1.02024245262146,
+                  -0.533668577671051,
+                  -1.5601255893707275,
+                  -2.1973280906677246,
+                  -0.9544556140899658,
+                  -0.35634419322013855,
+                  -0.35634419322013855,
+                  -0.026833638548851013,
+                  -0.026833638548851013,
+                  -0.026833638548851013,
+                  -1.2190154790878296,
+                  -4.306615829467773,
+                  -0.46965399384498596,
+                  -0.6162928938865662,
+                  -0.11240856349468231,
+                  -0.0022265336010605097,
+                  -0.19345906376838684,
+                  -0.19345906376838684,
+                  0,
+                  -0.04570828378200531,
+                  -0.07513726502656937,
+                  -0.07513726502656937,
+                  -0.2496582418680191,
+                  -1.3218066692352295,
+                  -0.9937765002250671,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  -0.5737649202346802,
+                  0,
+                  0,
+                  -1.295712713042611
+                ],
+                [
+                  -0.009634711779654026,
+                  -0.010282495990395546,
+                  -0.009902587160468102,
+                  -0.014937330037355423,
+                  -0.006148399785161018,
+                  -0.0065339673310518265,
+                  -0.008994855917990208,
+                  -0.008661633357405663,
+                  -0.008340621367096901,
+                  -0.5151128172874451,
+                  -1.1113957166671753,
+                  -0.622505247592926,
+                  0.12391863018274307,
+                  0.6336188316345215,
+                  -0.0389314703643322,
+                  3.4002346992492676,
+                  -1.6894553899765015,
+                  -4.9847588539123535,
+                  1.659316897392273,
+                  3.387254476547241,
+                  -1.063904881477356,
+                  1.56659996509552,
+                  2.6889894008636475,
+                  -5.432981491088867,
+                  -0.30685150623321533,
+                  0,
+                  -0.03815583139657974,
+                  4.5957159996032715,
+                  -0.42440032958984375,
+                  -0.42440032958984375,
+                  8.101585388183594,
+                  4.332887649536133,
+                  6.503172397613525,
+                  -0.6855942606925964,
+                  -0.3451434373855591,
+                  -0.19701501727104187,
+                  -0.09725883603096008,
+                  -0.49641114473342896,
+                  -0.13733574748039246,
+                  -0.07856368273496628,
+                  -0.07856368273496628,
+                  -0.10825221240520477,
+                  -0.10825221240520477,
+                  -0.10825221240520477,
+                  -0.30685150623321533,
+                  -0.17128513753414154,
+                  -0.03815583139657974,
+                  -0.08265295624732971,
+                  -0.0254192054271698,
+                  -0.3124378025531769,
+                  -1.8831089735031128,
+                  -1.9852769374847412,
+                  -0.2723831236362457,
+                  -0.7254375219345093,
+                  -3.9405860900878906,
+                  -3.9405860900878906,
+                  -0.6354627013206482,
+                  -1.4683817625045776,
+                  -0.6605232954025269,
+                  0,
+                  -0.11927883327007294,
+                  -0.11927883327007294,
+                  -0.11927883327007294,
+                  -3.748917818069458,
+                  -0.8191295862197876,
+                  -3.893582820892334,
+                  -2.3666152954101562,
+                  -2.3666152954101562,
+                  -0.41622651550413303
+                ],
+                [
+                  -0.26581650972366333,
+                  -0.26521313190460205,
+                  -0.2646392583847046,
+                  -0.23200519382953644,
+                  -0.11034275591373444,
+                  -0.09882736206054688,
+                  -0.26371073722839355,
+                  -0.263001024723053,
+                  -0.2622433006763458,
+                  -0.5500903129577637,
+                  0.6596795320510864,
+                  -0.53227299451828,
+                  -0.6613407135009766,
+                  -0.15659771859645844,
+                  -0.2610693871974945,
+                  -1.0182178020477295,
+                  -0.7993765473365784,
+                  1.5495867729187012,
+                  -1.7104885578155518,
+                  -2.0371456146240234,
+                  1.6610891819000244,
+                  -0.1952408254146576,
+                  -0.7689005136489868,
+                  -0.15944510698318481,
+                  -0.7348381280899048,
+                  -0.01934378780424595,
+                  -2.0585782527923584,
+                  0.8415947556495667,
+                  -0.09657712280750275,
+                  -0.09657712280750275,
+                  -0.31345969438552856,
+                  -0.010450947098433971,
+                  0,
+                  6.091983795166016,
+                  3.7311899662017822,
+                  1.1500043869018555,
+                  0.6073992252349854,
+                  4.1249189376831055,
+                  6.354020595550537,
+                  2.581305980682373,
+                  2.581305980682373,
+                  2.7431271076202393,
+                  2.7431271076202393,
+                  2.7431271076202393,
+                  -0.6753677725791931,
+                  -1.8043408393859863,
+                  -2.019890785217285,
+                  -3.826052665710449,
+                  -1.7923415899276733,
+                  -0.27200764417648315,
+                  -0.09282733500003815,
+                  -0.25441548228263855,
+                  -0.26972880959510803,
+                  -0.2125380039215088,
+                  -0.13304860889911652,
+                  -0.13304860889911652,
+                  -0.031172091141343117,
+                  -0.24429787695407867,
+                  -0.027503933757543564,
+                  -0.12963895499706268,
+                  -0.1349254846572876,
+                  -0.1349254846572876,
+                  -0.1349254846572876,
+                  -0.06814483553171158,
+                  -0.0207564327865839,
+                  -0.022347837686538696,
+                  -0.010450947098433971,
+                  -0.010450947098433971,
+                  0.2651742186596764
+                ],
+                [
+                  -1.3849905729293823,
+                  -1.3791362047195435,
+                  -1.37302565574646,
+                  -0.9395064115524292,
+                  -0.4723820090293884,
+                  -0.46685242652893066,
+                  -1.3648099899291992,
+                  -1.3580317497253418,
+                  -1.3510178327560425,
+                  1.8759715557098389,
+                  -1.9770119190216064,
+                  -1.3832716941833496,
+                  -1.5662057399749756,
+                  -0.21309645473957062,
+                  -0.4094853699207306,
+                  -2.5130205154418945,
+                  -3.3945822715759277,
+                  4.516238689422607,
+                  -2.3883326053619385,
+                  -1.4978792667388916,
+                  -2.1744298934936523,
+                  -0.9627224206924438,
+                  2.2332329750061035,
+                  -1.8204771280288696,
+                  1.3756417036056519,
+                  -1.5143747329711914,
+                  1.827082872390747,
+                  -1.2370874881744385,
+                  -0.07794959843158722,
+                  -0.07794959843158722,
+                  -0.667755663394928,
+                  -0.02197842486202717,
+                  0,
+                  -2.3009486198425293,
+                  -2.6902787685394287,
+                  -0.6027559638023376,
+                  -1.292432427406311,
+                  -1.1531227827072144,
+                  -3.5898289680480957,
+                  -1.9733737707138062,
+                  -1.9733737707138062,
+                  0,
+                  0,
+                  0,
+                  2.8902151584625244,
+                  8.334320068359375,
+                  3.3412225246429443,
+                  5.495877742767334,
+                  2.1542909145355225,
+                  12.648538589477539,
+                  -0.4487617313861847,
+                  -0.8460197448730469,
+                  -1.3952668905258179,
+                  -0.5870532393455505,
+                  -0.24471735954284668,
+                  -0.24471735954284668,
+                  -0.0574067160487175,
+                  -0.823826253414154,
+                  -0.05186836048960686,
+                  -0.6052761673927307,
+                  -0.47850221395492554,
+                  -0.47850221395492554,
+                  -0.47850221395492554,
+                  -0.12596844136714935,
+                  -0.03575144335627556,
+                  -0.04377608001232147,
+                  -0.02197842486202717,
+                  -0.02197842486202717,
+                  1.4103319394132934
+                ],
+                [
+                  -1.561305046081543,
+                  -1.556028127670288,
+                  -1.5504515171051025,
+                  -1.0666899681091309,
+                  -0.5447321534156799,
+                  -0.5195299386978149,
+                  -1.542991042137146,
+                  -1.536644458770752,
+                  -1.5300147533416748,
+                  -1.4953722953796387,
+                  -1.7805625200271606,
+                  1.7165966033935547,
+                  -0.1495034247636795,
+                  -0.6012426614761353,
+                  2.4455854892730713,
+                  -2.3813207149505615,
+                  -0.9896918535232544,
+                  -1.4264819622039795,
+                  -0.5304052233695984,
+                  -0.3741794228553772,
+                  -0.4143316447734833,
+                  2.4925482273101807,
+                  -0.003847224870696664,
+                  -0.914666473865509,
+                  -0.12339172512292862,
+                  -0.006906722206622362,
+                  -0.026964960619807243,
+                  -0.061925437301397324,
+                  -0.037270814180374146,
+                  -0.037270814180374146,
+                  -2.2113513946533203,
+                  -0.5225691199302673,
+                  0,
+                  -0.1578817367553711,
+                  -0.03512701019644737,
+                  -0.013637798838317394,
+                  -0.0350312665104866,
+                  -0.34819337725639343,
+                  -0.056036464869976044,
+                  -0.014670313335955143,
+                  -0.014670313335955143,
+                  -0.2685328722000122,
+                  -0.2685328722000122,
+                  -0.2685328722000122,
+                  -0.11000994592905045,
+                  -0.13927754759788513,
+                  -0.014878197573125362,
+                  -0.01833699457347393,
+                  -0.0008782282820902765,
+                  -1.5161422491073608,
+                  3.705230712890625,
+                  6.696355819702148,
+                  12.489717483520508,
+                  6.03877067565918,
+                  1.2139995098114014,
+                  1.2139995098114014,
+                  -0.5926221013069153,
+                  -1.3433187007904053,
+                  -0.17598764598369598,
+                  -0.40361833572387695,
+                  -0.5934785604476929,
+                  -0.5934785604476929,
+                  -0.5934785604476929,
+                  -1.6286795139312744,
+                  -0.2794373333454132,
+                  -0.01602565497159958,
+                  -0.05160629376769066,
+                  -0.05160629376769066,
+                  1.5758623596371806
+                ],
+                [
+                  -0.7350459694862366,
+                  -0.7257565259933472,
+                  -0.7179726362228394,
+                  -0.6703437566757202,
+                  -0.3355792462825775,
+                  -0.3018816411495209,
+                  -0.7080332040786743,
+                  -0.7041566967964172,
+                  -0.7015392780303955,
+                  -0.15664595365524292,
+                  -0.5835890173912048,
+                  -0.38036778569221497,
+                  0.7487942576408386,
+                  -0.3311533033847809,
+                  -0.5863742828369141,
+                  0.14716680347919464,
+                  -1.9398918151855469,
+                  -1.4636212587356567,
+                  -0.3884977400302887,
+                  0.8056070804595947,
+                  -0.4442417323589325,
+                  0.45506131649017334,
+                  -1.015631914138794,
+                  2.1920769214630127,
+                  -0.07295873016119003,
+                  -0.07295873016119003,
+                  -0.07295873016119003,
+                  -0.21593594551086426,
+                  -0.15583185851573944,
+                  -0.15583185851573944,
+                  -1.7229679822921753,
+                  -0.7339686751365662,
+                  -0.5467000007629395,
+                  0,
+                  0,
+                  0,
+                  0,
+                  -0.1317339539527893,
+                  0,
+                  0,
+                  0,
+                  -0.1317339539527893,
+                  -0.1317339539527893,
+                  -0.1317339539527893,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  -0.6965345144271851,
+                  -0.629523515701294,
+                  -0.742372989654541,
+                  -0.6935189962387085,
+                  -0.30194374918937683,
+                  -0.7022556066513062,
+                  -0.7022556066513062,
+                  1.7140940427780151,
+                  8.329279899597168,
+                  1.3637747764587402,
+                  5.251174449920654,
+                  4.528331279754639,
+                  4.528331279754639,
+                  4.528331279754639,
+                  -0.6454044580459595,
+                  -0.28382840752601624,
+                  -0.7092783451080322,
+                  -0.039356499910354614,
+                  -0.039356499910354614,
+                  0.7000198842480866
+                ],
+                [
+                  -0.12721595168113708,
+                  -0.12199912220239639,
+                  -0.11699613183736801,
+                  -0.2472246140241623,
+                  -0.10640129446983337,
+                  -0.09598542749881744,
+                  -0.1039092093706131,
+                  -0.09964726120233536,
+                  -0.11928322166204453,
+                  -0.23993419110774994,
+                  0.1476605385541916,
+                  -0.23993419110774994,
+                  -1.2568999528884888,
+                  -0.8261310458183289,
+                  -0.8261310458183289,
+                  -0.5322490334510803,
+                  1.9248160123825073,
+                  -2.3419723510742188,
+                  -1.194237232208252,
+                  -1.060207486152649,
+                  -0.01872645877301693,
+                  -2.006808280944824,
+                  -1.8867653608322144,
+                  4.149242401123047,
+                  -0.5722666382789612,
+                  -0.5722666382789612,
+                  -0.5722666382789612,
+                  -0.6735783815383911,
+                  -0.036776117980480194,
+                  -0.036776117980480194,
+                  4.385742664337158,
+                  -3.0126683712005615,
+                  -0.07425260543823242,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  -2.2110085487365723,
+                  -2.2110085487365723,
+                  0,
+                  0,
+                  3.252166986465454,
+                  3.252166986465454,
+                  -0.08948414027690887,
+                  -0.43982359766960144,
+                  -0.3199000060558319,
+                  0,
+                  0,
+                  0,
+                  0,
+                  5.4637579917907715,
+                  0.4023664593696594,
+                  5.169539451599121,
+                  1.14548659324646,
+                  1.14548659324646,
+                  -0.8183531072586325
+                ]
+              ]
+            }
+          }
+        }
+      }
+    },
+    "intentDomains": {},
+    "extraSentences": [
+      [
+        "en",
+        "hi"
+      ],
+      [
+        "en",
+        "hello"
+      ],
+      [
+        "en",
+        "hey"
+      ],
+      [
+        "en",
+        "good morning"
+      ],
+      [
+        "en",
+        "good afternoon"
+      ],
+      [
+        "en",
+        "hola"
+      ],
+      [
+        "en",
+        "bonjour"
+      ],
+      [
+        "en",
+        "howdy"
+      ],
+      [
+        "en",
+        "what's up"
+      ],
+      [
+        "en",
+        "I want to book a room"
+      ],
+      [
+        "en",
+        "book a room"
+      ],
+      [
+        "en",
+        "reserve room for tomorrow"
+      ],
+      [
+        "en",
+        "how do I book a room"
+      ],
+      [
+        "en",
+        "can you help me reserve a room"
+      ],
+      [
+        "en",
+        "I need a room for 2 people"
+      ],
+      [
+        "en",
+        "cancel my booking"
+      ],
+      [
+        "en",
+        "I want to cancel my reservation"
+      ],
+      [
+        "en",
+        "how do I cancel a booking"
+      ],
+      [
+        "en",
+        "remove my booking"
+      ],
+      [
+        "en",
+        "cancel booking for room 2"
+      ],
+      [
+        "en",
+        "is room 2 available on 2025-11-03"
+      ],
+      [
+        "en",
+        "which rooms are available tomorrow"
+      ],
+      [
+        "en",
+        "available rooms today"
+      ],
+      [
+        "en",
+        "what rooms are free on 2025-10-31"
+      ],
+      [
+        "en",
+        "are there any vacancies tomorrow"
+      ],
+      [
+        "en",
+        "what rooms do you have"
+      ],
+      [
+        "en",
+        "list rooms"
+      ],
+      [
+        "en",
+        "show me available room types"
+      ],
+      [
+        "en",
+        "what are your room types"
+      ],
+      [
+        "en",
+        "amenities"
+      ],
+      [
+        "en",
+        "how do I log in"
+      ],
+      [
+        "en",
+        "login"
+      ],
+      [
+        "en",
+        "sign in"
+      ],
+      [
+        "en",
+        "I can't log in"
+      ],
+      [
+        "en",
+        "how to sign up"
+      ],
+      [
+        "en",
+        "how many days can I book"
+      ],
+      [
+        "en",
+        "can I book for 6 days"
+      ],
+      [
+        "en",
+        "days limit"
+      ],
+      [
+        "en",
+        "maximum stay length"
+      ],
+      [
+        "en",
+        "why can't I cancel other's bookings"
+      ],
+      [
+        "en",
+        "why can't I cancel"
+      ],
+      [
+        "en",
+        "who can cancel a booking"
+      ],
+      [
+        "en",
+        "why can't someone else cancel my booking"
+      ]
+    ]
+  },
+  "ner": {
+    "settings": {
+      "tag": "ner",
+      "entityPreffix": "%",
+      "entitySuffix": "%"
+    },
+    "rules": {}
+  },
+  "nlgManager": {
+    "settings": {
+      "tag": "nlg-manager"
+    },
+    "responses": {
+      "en": {
+        "greeting": [
+          {
+            "answer": "(intent:greeting)"
+          }
+        ],
+        "book": [
+          {
+            "answer": "(intent:book)"
+          }
+        ],
+        "cancel": [
+          {
+            "answer": "(intent:cancel)"
+          }
+        ],
+        "availability": [
+          {
+            "answer": "(intent:availability)"
+          }
+        ],
+        "list_rooms": [
+          {
+            "answer": "(intent:list_rooms)"
+          }
+        ],
+        "login_help": [
+          {
+            "answer": "(intent:login_help)"
+          }
+        ],
+        "days_limit": [
+          {
+            "answer": "(intent:days_limit)"
+          }
+        ],
+        "rls_explain": [
+          {
+            "answer": "(intent:rls_explain)"
+          }
+        ]
+      }
+    }
+  },
+  "actionManager": {
+    "settings": {
+      "tag": "action-manager"
+    },
+    "actions": {}
+  },
+  "slotManager": {}
+}

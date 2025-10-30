@@ -67,30 +67,32 @@ export class ChatbotService {
   }
 
   private async answerLocally(text: string): Promise<ChatReply | null> {
-    const q = text.toLowerCase().trim();
+    const qRaw = (text || '').trim();
+    const q = qRaw.toLowerCase();
 
-    // -1) Quick greeting intent
-    if (/^(hi|hello|hey|yo|good\s*(morning|afternoon|evening)|greetings|sup|what'?s up|whats up|hola)\b/.test(q)) {
-      const ans = "Hello! I'm Drac. How can I help with bookings or availability today?";
-  await this.logChat(text, ans, false, 'greeting');
-  return { kind: 'text', text: ans };
+    // -1) Multilingual greeting: reply in the same language when possible
+    const greetLang = this.detectGreetingLanguage(q);
+    if (greetLang) {
+      const ans = this.greetingReplyForLang(greetLang);
+      await this.logChat(text, ans, false, 'greeting');
+      return { kind: 'text', text: ans };
     }
 
-    // 0) Availability questions (dynamic)
+    // 0) Availability questions (dynamic) - support multilingual keywords
     const availability = await this.tryAvailability(q);
-  if (availability) return availability;
+    if (availability) return availability;
 
     // 1) JSON FAQ (editable without code)
     await this.loadFaq();
     for (const intent of this.faqIntents) {
       if (intent.patterns?.some(p => q.includes(p.toLowerCase()))) {
-  await this.logChat(text, intent.answer, false, intent.id);
-  return { kind: 'text', text: intent.answer };
+        await this.logChat(text, intent.answer, false, intent.id);
+        return { kind: 'text', text: intent.answer };
       }
     }
 
-    // Booking flow
-    if (/(how\s+do\s+i\s+book|book\s+a\s+room|booking\s+room)/.test(q)) {
+  // Booking flow (wider patterns, multilingual keywords) — include Tagalog keywords
+  if (/(how\s+do\s+i\s+book|book\s+a\s+room|booking\s+room|reserve|reservar|reservar habitación|réserver|mag-?book|magpareserba|magpareserba ng kwarto|magpareserba ng|magpareserba ng kwarto|magpareserba ng kuwarto|magpareserba ng silid|magpareserba ng silid)/.test(q)) {
       const ans = [
         'To book a room:',
         '1) Log in (Login on the top-right).',
@@ -98,54 +100,51 @@ export class ChatbotService {
         '3) Pick a check-in date and choose 1–5 days.',
         '4) Click Avail to confirm. The room turns Booked and only you can Cancel it.',
       ].join('\n');
-  await this.logChat(text, ans, false, 'booking_help');
-  return { kind: 'text', text: ans };
+      await this.logChat(text, ans, false, 'booking_help');
+      return { kind: 'text', text: ans };
     }
 
     // Login / Signup
-    if (/(how\s+do\s+i\s+log\s*in|login|log\s+in|sign\s*up|create\s+account)/.test(q)) {
-      const ans = [
-        'Login/Signup:',
-        '• Use the Login or Sign up buttons on the toolbar.',
-      ].join('\n');
-  await this.logChat(text, ans, false, 'login_help');
-  return { kind: 'text', text: ans };
+  if (/(how\s+do\s+i\s+log\s*in|login|log\s+in|sign\s*up|create\s+account|iniciar sesi[oó]n|registrarse|mag-?login|mag-?log in|mag-?signin|mag-?sign in|mag-?register|mag-?rehistro|mag-?signup|mag-?sign up)/.test(q)) {
+      const ans = ['Login/Signup:', '• Use the Login or Sign up buttons on the toolbar.'].join('\n');
+      await this.logChat(text, ans, false, 'login_help');
+      return { kind: 'text', text: ans };
     }
 
     // Cancel booking
-    if (/(how\s+do\s+i\s+cancel|cancel\s+booking|cancel\s+my\s+room)/.test(q)) {
+  if (/(how\s+do\s+i\s+cancel|cancel\s+booking|cancel\s+my\s+room|cancelar|anular|kanselahin|kansela|i-kansela|i cancel)/.test(q)) {
       const ans = [
         'Cancel a booking:',
         '• Open the room you booked, then click Cancel booking in the modal.',
         '• Only the person who booked the room can see and use Cancel.',
       ].join('\n');
-  await this.logChat(text, ans, false, 'cancel_help');
-  return { kind: 'text', text: ans };
+      await this.logChat(text, ans, false, 'cancel_help');
+      return { kind: 'text', text: ans };
     }
 
     // Why can’t I cancel others?
-    if (/(why\s+can.?t\s+i\s+cancel|cannot\s+cancel\s+someone|other\s+customer\s+cancel)/.test(q)) {
+    if (/(why\s+can.?t\s+i\s+cancel|cannot\s+cancel\s+someone|other\s+customer\s+cancel|por que no puedo cancelar)/.test(q)) {
       const ans = 'Only the original booker can cancel a room. This is enforced by Row Level Security (RLS) in the database and by the UI.';
-  await this.logChat(text, ans, false, 'rls_explain');
-  return { kind: 'text', text: ans };
+      await this.logChat(text, ans, false, 'rls_explain');
+      return { kind: 'text', text: ans };
     }
 
     // How many days / 5-day limit
-    if (/(how\s+many\s+days|days\s+limit|book\s+for\s+6|more\s+than\s+5)/.test(q)) {
+  if (/(how\s+many\s+days|days\s+limit|book\s+for\s+6|more\s+than\s+5|d[ií]as|l[íi]mite|ilang\s+araw|ilang\s+days|max|maximum|pinakamataas)/.test(q)) {
       const ans = 'You can select 1–5 days per booking in the modal. Longer stays are not allowed in the current UI.';
-  await this.logChat(text, ans, false, 'days_limit');
-  return { kind: 'text', text: ans };
+      await this.logChat(text, ans, false, 'days_limit');
+      return { kind: 'text', text: ans };
     }
 
-    // Available rooms question
-    if (/(what\s+rooms\s+are\s+available|available\s+rooms|which\s+rooms\s+are\s+free)/.test(q)) {
+    // Available rooms question (generic)
+  if (/(what\s+rooms\s+are\s+available|available\s+rooms|which\s+rooms\s+are\s+free|habitaciones disponibles|habitaciones libres|may\s+bakante|bakante|mga\s+kuwarto\s+available|mga\s+kuwarto)/.test(q)) {
       const ans = 'Available rooms are marked with the Available badge on the Dashboard grid (green). Booked rooms are labeled Booked.';
-  await this.logChat(text, ans, false, 'available_rooms_generic');
-  return { kind: 'text', text: ans };
+      await this.logChat(text, ans, false, 'available_rooms_generic');
+      return { kind: 'text', text: ans };
     }
 
     // Ask for rooms details & amenities
-    if (/(what\s+rooms(\s+do\s+you\s+have)?|list\s+rooms|show\s+rooms|amenities|what\'s\s+included|whats\s+included)/.test(q)) {
+  if (/(what\s+rooms(\s+do\s+you\s+have)?|list\s+rooms|show\s+rooms|amenities|what\'s\s+included|whats\s+included|amenidades|mga\s+kuwarto|mga\s+silid|ano\s+ang\s+mga\s+kuwarto|ano\s+ang\s+amenidad|ano\s+ang\s+amenities)/.test(q)) {
       try {
         const rooms = await getRooms().catch(() => null);
         const source = rooms && rooms.length ? rooms : [
@@ -165,7 +164,55 @@ export class ChatbotService {
       }
     }
 
+    // Friendly in-scope fallback: ask clarifying question instead of immediate AI failure
+    if (/(.+)/.test(q)) {
+      const ans = "I didn't quite get that — do you want to (1) book a room, (2) check availability, or (3) see room types and amenities?";
+      await this.logChat(text, ans, true, 'clarify_fallback');
+      return { kind: 'text', text: ans };
+    }
+
     return null; // let AI try next
+  }
+
+  // Detect if a greeting appears and return a short language code (e.g. 'en','es','fr')
+  private detectGreetingLanguage(q: string): string | null {
+    if (!q) return null;
+    // common greetings in several languages
+    const map: { [k: string]: string } = {
+      'hola': 'es', 'buenos': 'es', 'buenas': 'es',
+      'bonjour': 'fr', 'salut': 'fr',
+      'hallo': 'de', 'guten': 'de',
+      'ciao': 'it',
+      'olá': 'pt', 'ola': 'pt',
+      'こんにちは': 'ja', 'こんばんは': 'ja',
+      '안녕': 'ko',
+      '你好': 'zh', '嗨': 'zh',
+      // Tagalog greetings
+      'kamusta': 'tl', 'kumusta': 'tl', 'mabuhay': 'tl', 'magandang': 'tl',
+      'hey': 'en', 'hi': 'en', 'hello': 'en', 'good': 'en', 'howdy': 'en',
+    };
+    // Tokenize the input and match whole words only to avoid accidental matches
+    const tokens = q.split(/\W+/).filter(Boolean);
+    for (const k of Object.keys(map)) {
+      if (tokens.includes(k)) return map[k];
+    }
+    return null;
+  }
+
+  private greetingReplyForLang(lang: string): string {
+    const replies: { [k: string]: string } = {
+      en: "Hello! I'm Drac. How can I help with bookings or availability today?",
+      tl: "Kumusta! Ako si Drac. Paano kita matutulungan tungkol sa pag-book o availability ng mga kuwarto?",
+      es: "¡Hola! Soy Drac. ¿En qué puedo ayudarte con reservas o disponibilidad?",
+      fr: "Bonjour ! Je suis Drac. Comment puis-je vous aider pour les réservations ou la disponibilité ?",
+      de: "Hallo! Ich bin Drac. Wie kann ich bei Buchungen oder Verfügbarkeit helfen?",
+      it: "Ciao! Sono Drac. Come posso aiutarti con le prenotazioni o la disponibilità?",
+      pt: "Olá! Sou Drac. Como posso ajudar com reservas ou disponibilidade?",
+      ja: "こんにちは！私はDracです。予約や空室についてどうお手伝いできますか？",
+      ko: "안녕하세요! 저는 Drac입니다. 예약이나 이용 가능 여부를 도와드릴까요?",
+      zh: "你好！我是Drac。请问我能帮你预订房间或查询可用性吗？",
+    };
+    return replies[lang] ?? replies['en'];
   }
 
   private parseDateToken(q: string): string | null {

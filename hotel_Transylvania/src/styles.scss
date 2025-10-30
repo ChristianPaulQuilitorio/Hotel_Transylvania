@@ -184,8 +184,173 @@ img, svg, video, canvas { max-width: 100%; height: auto; }
   --bs-btn-hover-color: #ffffff;
 }
 
+/* Make Bootstrap modals comfortable in dark mode (reduce bright white cards) */
+.theme-dark .modal-content {
+  background-color: #242424; /* dark but not pitch black */
+  color: #eaeaea;
+  border: 1px solid rgba(255,255,255,0.06);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+}
+.theme-dark .modal-header,
+.theme-dark .modal-footer {
+  background: transparent;
+  border-color: rgba(255,255,255,0.04);
+}
+.theme-dark .modal-title { color: #f3f3f3; }
+.theme-dark .modal-backdrop.show { background-color: rgba(0,0,0,0.7); }
+.theme-dark .modal .btn-close { filter: invert(1) grayscale(100%); opacity: 0.9; }
+
+/* Improve modal form contrast & accessibility in dark mode */
+.theme-dark .modal-content {
+  /* slightly lighter so embedded white inputs are visible */
+  background-color: #1f1f1f;
+  color: #f0f0f0;
+}
+.theme-dark .modal-body { font-size: 0.95rem; line-height: 1.45; }
+.theme-dark .modal .form-label { color: #dddddd; font-weight: 600; }
+.theme-dark .modal .form-text, .theme-dark .modal .small { color: #cfcfcf; }
+.theme-dark .modal .form-control,
+.theme-dark .modal select.form-select,
+.theme-dark .modal textarea.form-control {
+  background: #141414; /* dark field */
+  color: #eeeeee;
+  border: 1px solid #353535;
+  box-shadow: none;
+}
+.theme-dark .modal .form-control::placeholder,
+.theme-dark .modal textarea.form-control::placeholder { color: #9f9f9f; }
+.theme-dark .modal .form-control:focus,
+.theme-dark .modal textarea.form-control:focus,
+.theme-dark .modal .form-select:focus {
+  outline: 3px solid rgba(155,216,58,0.12); /* subtle khaki focus */
+  border-color: rgba(155,216,58,0.28);
+}
+.theme-dark .modal .btn-primary {
+  --bs-btn-bg: var(--brand-khaki);
+  --bs-btn-color: #111;
+  border: 1px solid rgba(0,0,0,0.16);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.45);
+}
+.theme-dark .modal .btn-secondary {
+  background: transparent;
+  color: #ddd;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.theme-dark .badge { color: #fff !important; }
+
+/* Improve star rating contrast */
+.theme-dark .text-warning { color: #ffd54a !important; }
+
+/* Ensure modal close button is reachable and visible */
+.theme-dark .modal-header .btn-close { filter: invert(1) grayscale(100%); opacity: 0.95; }
+
+/* Make interactive elements easier to hit */
+.theme-dark .modal .btn, .theme-dark .modal .form-control { border-radius: 8px; }
+
+/* Respect prefers-contrast for users needing higher contrast */
+@media (prefers-contrast: more) {
+  .theme-dark .modal-content { background-color: #111 !important; color: #fff !important; }
+  .theme-dark .modal .form-control { border-color: #666 !important; }
+}
+
+
 /* Hide chat FAB when help/tutorial is open */
 .offcanvas-help-open .chat-fab { display: none !important; }
+
+/* Toast appearance in dark theme */
+.theme-dark .toast {
+  background-color: rgba(36,36,36,0.96) !important;
+  color: #eee !important;
+  border: 1px solid rgba(255,255,255,0.04) !important;
+}
+.theme-dark .toast .toast-body { color: #eaeaea !important; }
+.theme-dark .toast .btn-close { filter: invert(1) grayscale(100%); opacity: 0.85; }
+.theme-dark .toast.align-items-center.text-bg-dark { background-color: rgba(28,28,28,0.96) !important; }
+
+/* Make light utility backgrounds blend into modal dark mode */
+.theme-dark .modal .bg-light,
+.theme-dark .modal .bg-light-subtle,
+.theme-dark .modal .bg-light-soft {
+  background-color: #222 !important;
+  color: #eaeaea !important;
+  border: 1px solid rgba(255,255,255,0.04) !important;
+}
+
+/* Ensure the rating box and its inputs blend in dark mode */
+.theme-dark .modal .rating-box,
+.theme-dark .modal .bg-light-subtle {
+  padding: .9rem !important;
+  border-radius: 8px;
+}
+
+/* Ratings textarea and submit button in dark mode */
+.theme-dark .modal .rating-box textarea.form-control,
+.theme-dark .modal .rating-box .form-control {
+  background: #121212 !important;
+  color: #f1f1f1 !important;
+  border: 1px solid #3a3a3a !important;
+}
+.theme-dark .modal .rating-box .btn-outline-primary {
+  --bs-btn-color: #e9e9e9;
+  --bs-btn-border-color: rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.02);
+}
+
+/* Star buttons contrast */
+.theme-dark .modal .rating-box button.btn-sm {
+  background: transparent;
+  color: #ffffff; /* make unselected stars white in dark mode */
+  border: 0;
+}
+.theme-dark .modal .rating-box button.btn-sm.text-warning {
+  color: #ffd54a !important;
+}
+
+/* Add subtle white outline to each star button so unselected stars are visible in dark mode */
+.theme-dark .modal .rating-box button.btn-sm {
+  border: 1px solid rgba(255,255,255,0.10);
+  padding: 0.15rem 0.45rem;
+  border-radius: 6px;
+  transition: background .12s ease, color .12s ease, transform .08s ease;
+}
+.theme-dark .modal .rating-box button.btn-sm:hover {
+  background: rgba(255,255,255,0.04);
+  transform: translateY(-1px);
+}
+.theme-dark .modal .rating-box button.btn-sm.text-warning {
+  border-color: rgba(255,213,74,0.18);
+  background: rgba(255,213,74,0.06);
+}
+
+/* Make rating stars hoverable in both light and dark modes */
+.modal .rating-box button.btn-sm,
+.modal .bg-light-subtle .btn.btn-sm {
+  cursor: pointer;
+}
+.modal .rating-box button.btn-sm:hover,
+.modal .bg-light-subtle .btn.btn-sm:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.06);
+}
+
+/* Ensure star buttons inside the template's bg-light-subtle container are styled
+   (the template uses .bg-light-subtle rather than .rating-box). This makes
+   unselected stars white and adds an outline/hover for affordance. */
+.theme-dark .modal .bg-light-subtle .btn.btn-sm {
+  color: #ffffff !important; /* unselected stars white */
+  border: 1px solid rgba(255,255,255,0.10) !important;
+  padding: 0.15rem 0.45rem !important;
+  border-radius: 6px !important;
+  background: transparent !important;
+}
+.theme-dark .modal .bg-light-subtle .btn.btn-sm:hover {
+  background: rgba(255,255,255,0.04) !important;
+}
+.theme-dark .modal .bg-light-subtle .btn.btn-sm.text-warning {
+  color: #ffd54a !important;
+  border-color: rgba(255,213,74,0.18) !important;
+  background: rgba(255,213,74,0.06) !important;
+}
 
 /* During guided tour, keep FAB visible so it can be highlighted */
 
@@ -196,4 +361,56 @@ body.tour-open { overflow: hidden; }
 .mat-toolbar button.mat-mdc-button:hover,
 .mat-toolbar a.mat-mdc-button:hover {
   background: rgba(0,0,0,0.04);
+}
+
+/* Ensure Material menu icon (hamburger) is visible in dark mode */
+.theme-dark .mat-toolbar mat-icon,
+.theme-dark .mat-toolbar .mat-icon {
+  color: #ffffff !important;
+  filter: none !important;
+}
+
+/* Also ensure the mat-icon-button background/hover is adjusted for dark toolbar */
+.theme-dark .mat-toolbar button[mat-icon-button] {
+  color: #ffffff !important;
+}
+
+/* Navbar burger (toggler) white in dark theme */
+.theme-dark .navbar-toggler {
+  border-color: rgba(255,255,255,0.12);
+}
+.theme-dark .navbar-toggler .navbar-toggler-icon {
+  /* Override Bootstrap's SVG to use a white stroke so the three lines are visible in dark mode */
+  background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3E%3Cpath stroke='%23ffffff' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E") !important;
+  filter: none !important;
+}
+.theme-dark .navbar-toggler:focus {
+  box-shadow: 0 0 0 0.25rem rgba(255,255,255,0.06);
+}
+
+/* Stronger overrides in case Bootstrap specificity or different navbar classes are used */
+:root.theme-dark .navbar-toggler,
+.theme-dark .navbar-toggler,
+.navbar-dark .navbar-toggler {
+  border-color: rgba(255,255,255,0.12) !important;
+}
+
+:root.theme-dark .navbar-toggler-icon,
+.theme-dark .navbar-toggler-icon,
+.navbar-dark .navbar-toggler-icon {
+  /* Ensure any SVG using currentColor will render white */
+  color: #ffffff !important;
+  /* Also replace the background-image with an explicit white-stroked SVG as a fallback */
+  background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3E%3Cpath stroke='%23ffffff' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: center !important;
+  background-size: 1.25em 1.25em !important;
+  filter: none !important;
+}
+
+/* If a custom SVG <svg> element is used inside the toggler, make sure its strokes are white */
+.theme-dark .navbar-toggler svg path,
+.theme-dark .navbar-toggler svg line {
+  stroke: #ffffff !important;
+  fill: none !important;
 }

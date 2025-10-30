@@ -1,12 +1,11 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { Component, OnInit, OnDestroy, ChangeDetectionStrategy } from '@angular/core';
+import { RouterOutlet, Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatDividerModule } from '@angular/material/divider';
-import { Router, RouterLink } from '@angular/router';
 import { SettingsService } from './services/settings.service';
 import { supabase, signOut } from './services/supabase.service';
 import { ensureProfile } from './services/profiles.service';
@@ -20,16 +19,19 @@ import { TourComponent } from './tour/tour.component';
   imports: [RouterOutlet, CommonModule, RouterLink, MatToolbarModule, MatButtonModule, MatIconModule, MatMenuModule, MatDividerModule, ChatbotComponent, TutorialComponent, TourComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss'
+  , changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AppComponent implements OnInit, OnDestroy {
   title = 'hotel_Transylvania';
   isAuthenticated = false;
   private authSub: any;
+  private _beforeUnloadHandler: any;
   username: string | null = null;
   email: string | null = null;
   currentYear: number = new Date().getFullYear();
   todayISO: string = new Date().toISOString().slice(0, 10);
-  darkMode = false;
+  // default to true so new installs show the dark theme; actual value is synced from SettingsService in ngOnInit
+  darkMode = true;
 
   get onLanding(): boolean {
     try {
@@ -47,6 +49,27 @@ export class AppComponent implements OnInit, OnDestroy {
     try {
       this.darkMode = !!this.settings.get().highContrast;
     } catch {}
+    // Tab marker: use sessionStorage to distinguish a reload (same tab)
+    // from a fresh/opened tab (sessionStorage is cleared on tab close). If
+    // sessionStorage lacks our tab id, treat this as a fresh tab and remove
+    // persisted Supabase keys so the SDK won't auto-rehydrate a session.
+    try {
+      const TAB_KEY = 'app_tab_id_v1';
+      const existing = sessionStorage.getItem(TAB_KEY);
+      if (!existing) {
+        // clear supabase keys from localStorage (best-effort)
+        try {
+          for (let i = localStorage.length - 1; i >= 0; i--) {
+            const k = localStorage.key(i) || '';
+            if (/^sb-|supabase/i.test(k) || /supabase\.auth/i.test(k)) {
+              localStorage.removeItem(k);
+            }
+          }
+        } catch {}
+        // mark this tab so reloads keep the marker
+        try { sessionStorage.setItem(TAB_KEY, String(Date.now()) + '-' + Math.floor(Math.random()*100000)); } catch {}
+      }
+    } catch {}
     // initial check
     try {
       const { data } = await supabase.auth.getUser();
@@ -55,14 +78,15 @@ export class AppComponent implements OnInit, OnDestroy {
       if (user) {
         await ensureProfile(user);
         await this.loadUserInfo(user.id);
-        // If user landed here via email verification, take them to the dashboard
-        const path = this.router.url.split('?')[0];
-        if (path === '/' || path.startsWith('/login') || path.startsWith('/signup')) {
-          this.router.navigateByUrl('/dashboard');
-        }
+        // Do not auto-redirect to the dashboard on initial load. We prefer
+        // to land users on the public landing page when they open the app.
+        // Navigating to the dashboard will still occur after an explicit
+        // sign-in event (see onAuthStateChange below).
       } else {
         this.username = null;
         this.email = null;
+        // If there's no signed-in user on initial load, prefer landing page
+        try { this.router.navigateByUrl('/'); } catch {}
       }
     } catch (e) {
       this.isAuthenticated = false;
@@ -80,8 +104,11 @@ export class AppComponent implements OnInit, OnDestroy {
           this.router.navigateByUrl('/dashboard');
         }
       } else {
+        // Signed out or session expired -> clear user state and navigate to landing page
+        // (we prefer landing on reopen; auth-protected routes will still redirect to login as needed)
         this.username = null;
         this.email = null;
+        try { this.router.navigateByUrl('/'); } catch {}
       }
     });
 
@@ -93,6 +120,11 @@ export class AppComponent implements OnInit, OnDestroy {
         localStorage.setItem('seen_tutorial', '1');
       }
     } catch {}
+
+    // Note: we intentionally do NOT clear sessions on beforeunload. The
+    // session-clearing logic above runs only when a new tab is opened and
+    // sessionStorage lacks the tab marker; this preserves sessions across
+    // reloads while still ensuring closed tabs don't leave persistent tokens.
   }
 
   ngOnDestroy() {
@@ -104,6 +136,11 @@ export class AppComponent implements OnInit, OnDestroy {
     } catch (e) {
       // ignore
     }
+    try {
+      const h = (window as any)._appBeforeUnloadHandler;
+      if (h) window.removeEventListener('beforeunload', h);
+    } catch {}
+    // no dynamic beforeunload handler to remove
   }
 
   async loadUserInfo(userId: string) {

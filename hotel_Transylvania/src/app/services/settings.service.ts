@@ -15,7 +15,8 @@ export interface AppSettings {
 const STORAGE_KEY = 'app-settings-v1';
 
 const defaults: AppSettings = {
-  highContrast: false,
+  // Make dark mode the default. 'highContrast' is repurposed as the dark theme flag.
+  highContrast: true,
   enableChatShortcut: true,
   toolbarGradient: true,
   chatFabSide: 'right',

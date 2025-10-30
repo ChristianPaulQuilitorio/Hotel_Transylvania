@@ -1,0 +1,87 @@
+{
+  "intents": [
+    {
+      "intent": "greeting",
+      "examples": [
+        "hi",
+        "hello",
+        "hey",
+        "good morning",
+        "good afternoon",
+        "hola",
+        "bonjour",
+        "howdy",
+        "what's up"
+      ]
+    },
+    {
+      "intent": "book",
+      "examples": [
+        "I want to book a room",
+        "book a room",
+        "reserve room for tomorrow",
+        "how do I book a room",
+        "can you help me reserve a room",
+        "I need a room for 2 people"
+      ]
+    },
+    {
+      "intent": "cancel",
+      "examples": [
+        "cancel my booking",
+        "I want to cancel my reservation",
+        "how do I cancel a booking",
+        "remove my booking",
+        "cancel booking for room 2"
+      ]
+    },
+    {
+      "intent": "availability",
+      "examples": [
+        "is room 2 available on 2025-11-03",
+        "which rooms are available tomorrow",
+        "available rooms today",
+        "what rooms are free on 2025-10-31",
+        "are there any vacancies tomorrow"
+      ]
+    },
+    {
+      "intent": "list_rooms",
+      "examples": [
+        "what rooms do you have",
+        "list rooms",
+        "show me available room types",
+        "what are your room types",
+        "amenities"
+      ]
+    },
+    {
+      "intent": "login_help",
+      "examples": [
+        "how do I log in",
+        "login",
+        "sign in",
+        "I can't log in",
+        "how to sign up"
+      ]
+    },
+    {
+      "intent": "days_limit",
+      "examples": [
+        "how many days can I book",
+        "can I book for 6 days",
+        "days limit",
+        "maximum stay length"
+      ]
+    },
+    {
+      "intent": "rls_explain",
+      "examples": [
+        "why can't I cancel other's bookings",
+        "why can't I cancel",
+        "who can cancel a booking",
+        "why can't someone else cancel my booking"
+      ]
+    }
+  ]
+}

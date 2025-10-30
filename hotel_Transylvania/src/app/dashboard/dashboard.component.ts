@@ -1,4 +1,4 @@
-import { Component, ElementRef, ViewChild, OnInit, OnDestroy } from '@angular/core';
+import { Component, ElementRef, ViewChild, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -49,6 +49,18 @@ type Room = {
         <div class="d-flex">
           <div class="toast-body">
             {{ greetingMessage }}
+          </div>
+          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Status Toast (loading / error messages) -->
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1081">
+      <div #statusToast class="toast align-items-center text-white bg-secondary border-0 status-toast" role="alert" aria-live="polite" aria-atomic="true">
+        <div class="d-flex">
+          <div class="toast-body">
+            {{ statusMessage }}
           </div>
           <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
         </div>
@@ -120,10 +132,18 @@ type Room = {
                 <span class="text-muted" *ngIf="ratings[r.id] as rr"> {{ rr.average | number:'1.1-1' }} / 5 ({{ rr.count }})</span>
               </div>
 
-              <div class="mt-3 border rounded p-2 bg-light-subtle">
+              <div class="mt-3 border rounded p-2 bg-light-subtle rating-box">
                 <label class="form-label mb-1">Your rating</label>
                 <div class="mb-2">
-                  <button type="button" class="btn btn-sm" [class.text-warning]="userRating >= s" *ngFor="let s of [1,2,3,4,5]" (click)="userRating = s" [attr.aria-label]="'Rate ' + s + ' stars'">★</button>
+                  <button type="button" class="btn btn-sm"
+                    *ngFor="let s of [1,2,3,4,5]"
+                    (click)="userRating = s"
+                    (mouseenter)="hoverRating = s"
+                    (mouseleave)="hoverRating = 0"
+                    (focus)="hoverRating = s"
+                    (blur)="hoverRating = 0"
+                    [class.text-warning]="(hoverRating || userRating) >= s"
+                    [attr.aria-label]="'Rate ' + s + ' stars'">★</button>
                 </div>
                 <label class="form-label mt-1">Feedback (optional)</label>
                 <textarea class="form-control" rows="2" [(ngModel)]="userComment" placeholder="Tell us what you liked or what to improve"></textarea>
@@ -166,6 +186,7 @@ type Room = {
 export class DashboardComponent implements OnInit, OnDestroy {
   @ViewChild('roomModal', { static: true }) roomModalRef!: ElementRef<HTMLDivElement>;
   @ViewChild('greetToast', { static: true }) greetToastRef!: ElementRef<HTMLDivElement>;
+  @ViewChild('statusToast', { static: true }) statusToastRef!: ElementRef<HTMLDivElement>;
 
   rooms: Room[] = [];
 
@@ -182,13 +203,15 @@ export class DashboardComponent implements OnInit, OnDestroy {
   currentEmail: string | null = null;
   ratings: Record<number, { average: number; count: number }> = {};
   userRating = 0;
+  hoverRating = 0;
   userComment = '';
   ratingError: string | null = null;
   ratingSuccess = false;
 
-  constructor(private router: Router, private weather: WeatherService, private ratingsSvc: RatingsService) {}
+  constructor(private router: Router, private weather: WeatherService, private ratingsSvc: RatingsService, private cdr: ChangeDetectorRef) {}
   private roomChannel: any;
   greetingMessage = '';
+  statusMessage = '';
 
   async ngOnInit() {
     // Require logged-in user for booking actions
@@ -237,6 +260,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
               } else if (idx === -1 && payload.new) {
                 this.rooms.push(this.mapDbToRoom(payload.new));
               }
+              // Ensure Angular updates the view when realtime updates arrive
+              try { this.cdr.detectChanges(); } catch {}
             })
             .subscribe();
         } catch {}
@@ -295,6 +320,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
       if (ok) {
         this.selectedRoom.status = 'booked';
         this.selectedRoom.bookedBy = this.currentUserId;
+        try { this.cdr.detectChanges(); } catch {}
       } else {
         this.errorMessage = 'Room is not available for the selected date.';
         return;
@@ -324,6 +350,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
       if (ok) {
         this.selectedRoom.status = 'available';
         this.selectedRoom.bookedBy = null;
+        try { this.cdr.detectChanges(); } catch {}
       }
     } catch (e) {
       // leave status as-is if backend denies
@@ -332,14 +359,24 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   private async loadRoomsFromDb() {
+  // Show local defaults immediately so the UI isn't blank while async fetch runs
+  this.rooms = this.getDefaultRooms();
+  // ensure the view updates immediately (fixes cases where change detection
+  // isn't triggered until a user interaction like opening the menu)
+  try { this.cdr.detectChanges(); } catch {}
+  // previously showed a 'Loading rooms…' status toast here; removed to
+  // avoid noisy toasts during normal page load and keep the UI cleaner.
+
     try {
       const data = await fetchRooms();
       if (data && data.length > 0) {
         this.rooms = data.map(this.mapDbToRoom);
+        // Greeting toast will show separately; do not show a 'Rooms loaded' status toast.
+        try { this.cdr.detectChanges(); } catch {}
         return;
       }
 
-      // No data found -> attempt to seed, but always fall back to local defaults for UI
+      // No data found -> attempt to seed remote DB; keep local defaults displayed
       const defaults: RoomDb[] = [
         { id: 1, name: 'Deluxe King', image: 'assets/rooms/bed1.jpg', description: 'A spacious deluxe room with a comfortable king-sized bed, modern amenities, and a city view.', short: 'Spacious room with king bed', capacity: 2, status: 'available', booked_by: null },
         { id: 2, name: 'Twin Suite', image: 'assets/rooms/bed2.jpg', description: 'A cozy suite featuring two twin beds, perfect for friends or colleagues traveling together.', short: 'Two beds perfect for friends', capacity: 2, status: 'available', booked_by: null },
@@ -349,11 +386,52 @@ export class DashboardComponent implements OnInit, OnDestroy {
       ];
       try {
         await seedRooms(defaults);
-      } catch {}
-      this.rooms = defaults.map(this.mapDbToRoom);
+        this.rooms = defaults.map(this.mapDbToRoom);
+        try { this.showStatusToast('No remote rooms found — seeded defaults', 'info', 4000); } catch {}
+        try { this.cdr.detectChanges(); } catch {}
+      } catch (seedErr) {
+        // seeding failed — keep local defaults and surface a message
+        console.warn('seedRooms failed', seedErr);
+        try { this.showStatusToast('Could not seed remote DB — using local defaults', 'error', 6000); } catch {}
+        this.rooms = defaults.map(this.mapDbToRoom);
+        try { this.cdr.detectChanges(); } catch {}
+      }
     } catch (e) {
-      // Any DB error -> show local defaults so UI is never empty
+      // Any DB error -> keep local defaults so UI is never empty
+      console.warn('loadRoomsFromDb failed', e);
+      // If it's an auth/token error, redirect user to login so they can re-auth
+      const msg = (e && (e as any).message) ? (e as any).message : '';
+      const status = (e && (e as any).status) ? (e as any).status : undefined;
+      const lower = String(msg).toLowerCase();
+      if (status === 401 || lower.includes('jwt') || lower.includes('token') || lower.includes('authorization')) {
+        try { this.showStatusToast('Session expired — please sign in', 'error', 3500); } catch {}
+        setTimeout(() => { try { this.router.navigate(['/login']); } catch {} }, 900);
+      } else {
+        try { this.showStatusToast('Could not load rooms — server error', 'error', 6000); } catch {}
+      }
       this.rooms = this.getDefaultRooms();
+      try { this.cdr.detectChanges(); } catch {}
+    }
+  }
+
+  private showStatusToast(message: string, type: 'info' | 'success' | 'error' = 'info', delay = 4000) {
+    try {
+      // don't show status toasts while a modal is open (they overlap the detail view and are confusing)
+      try { if (document.querySelector('.modal.show')) return; } catch {}
+      this.statusMessage = message;
+      const el = this.statusToastRef?.nativeElement;
+      if (!el) return;
+      // normalize classes
+      el.classList.remove('bg-success', 'bg-danger', 'bg-info', 'bg-secondary', 'text-white', 'text-dark');
+      if (type === 'success') el.classList.add('bg-success', 'text-white');
+      else if (type === 'error') el.classList.add('bg-danger', 'text-white');
+      else if (type === 'info') el.classList.add('bg-info', 'text-white');
+      else el.classList.add('bg-secondary', 'text-white');
+      const toast = new (window as any).bootstrap.Toast(el, { delay });
+      toast.show();
+    } catch (e) {
+      // no-op if bootstrap isn't available
+      try { console.warn('showStatusToast error', e); } catch {}
     }
   }
 
@@ -384,10 +462,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   private async loadRatings() {
     try {
-      for (const r of this.rooms) {
-        const sum = await this.ratingsSvc.getSummary(r.id);
-        this.ratings[r.id] = sum;
-      }
+      // Fetch all summaries in parallel for speed, then update the local map
+      const results = await Promise.all(this.rooms.map(r => this.ratingsSvc.getSummary(r.id)));
+      results.forEach((sum, idx) => {
+        const id = this.rooms[idx].id;
+        this.ratings[id] = sum;
+      });
+      try { this.cdr.detectChanges(); } catch {}
     } catch {}
   }
 
@@ -420,13 +501,16 @@ export class DashboardComponent implements OnInit, OnDestroy {
         ? `${Math.round(wx.temperatureC)}°C, ${wx.description || 'Weather'}`
         : 'weather unavailable';
       this.greetingMessage = `${part}, ${who}. Today is ${dt}. Current weather: ${weatherStr}.`;
+      // ensure the template sees the updated greeting before Bootstrap tries to
+      // create/show the toast element (fixes needing a user interaction)
+      try { this.cdr.detectChanges(); } catch {}
       setTimeout(() => {
         try {
           const el = this.greetToastRef?.nativeElement;
           if (!el) return;
           const toast = new (window as any).bootstrap.Toast(el, { delay: 5000 });
           toast.show();
-        } catch {}
+        } catch (err) { console.warn('greet toast show failed', err); }
       }, 300);
     } catch {}
   }

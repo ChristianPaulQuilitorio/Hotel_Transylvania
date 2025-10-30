@@ -1,10 +1,11 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 @Component({
   standalone: true,
   selector: 'app-tutorial',
   imports: [CommonModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
   <div class="offcanvas offcanvas-end" tabindex="-1" id="helpCanvas" aria-labelledby="helpTitle" style="width:380px">
     <div class="offcanvas-header">

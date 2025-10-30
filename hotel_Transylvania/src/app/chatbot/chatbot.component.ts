@@ -1,4 +1,4 @@
-import { Component, AfterViewInit, OnDestroy, ElementRef, ViewChild } from '@angular/core';
+import { Component, AfterViewInit, OnDestroy, ElementRef, ViewChild, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ChatbotService, ChatMsg, ChatReply } from '../services/chatbot.service';
@@ -139,14 +139,16 @@ export class ChatbotComponent implements AfterViewInit, OnDestroy {
   isChatOpen = false;
   private offcanvasShownHandler?: () => void;
   private offcanvasHiddenHandler?: () => void;
+  private currentUserId: string | null = null;
+  private authSubscription: any;
 
-  constructor(private chat: ChatbotService, private settings: SettingsService) {}
+  constructor(private chat: ChatbotService, private settings: SettingsService, private cd: ChangeDetectorRef) {}
 
   ngAfterViewInit(): void {
     const el = this.chatCanvasRef?.nativeElement;
     if (!el) return;
-    const onShown = () => { this.isChatOpen = true; };
-    const onHidden = () => { this.isChatOpen = false; };
+  const onShown = () => { this.isChatOpen = true; try { this.cd.detectChanges(); } catch {} };
+  const onHidden = () => { this.isChatOpen = false; try { this.cd.detectChanges(); } catch {} };
     this.offcanvasShownHandler = onShown;
     this.offcanvasHiddenHandler = onHidden;
     el.addEventListener('shown.bs.offcanvas', onShown);
@@ -206,12 +208,36 @@ export class ChatbotComponent implements AfterViewInit, OnDestroy {
 
     // Load any saved conversation
     try {
-      const raw = localStorage.getItem('chat_history');
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed)) this.messages = parsed.filter((m: any) => m && m.role && m.content && m.time);
-        setTimeout(() => this.scrollToBottom(), 0);
-      }
+      this.loadConversationFromStorage();
+    } catch {}
+
+    // Track auth changes and auto-reset the chat when a different user signs in
+    try {
+      (async () => {
+        try {
+          const { data } = await supabase.auth.getUser();
+          this.currentUserId = (data as any)?.user?.id ?? null;
+        } catch {}
+        const { data: sub } = supabase.auth.onAuthStateChange((event: string, session: any) => {
+          try {
+            const newUserId = session?.user?.id ?? null;
+            if (event === 'SIGNED_IN') {
+              // If a different user signed in, switch to that user's conversation
+              if (!this.currentUserId || this.currentUserId !== newUserId) {
+                this.currentUserId = newUserId;
+                this.loadConversationFromStorage();
+              }
+            } else if (event === 'SIGNED_OUT') {
+              // When signed out, clear current conversation from view for privacy and switch to anon
+              this.currentUserId = null;
+              this.messages = [];
+              try { localStorage.removeItem(this.storageKey()); } catch {}
+              try { this.cd.detectChanges(); } catch {}
+            }
+          } catch {}
+        });
+        this.authSubscription = sub?.subscription ?? sub;
+      })();
     } catch {}
   }
 
@@ -229,11 +255,35 @@ export class ChatbotComponent implements AfterViewInit, OnDestroy {
       }
       const h = (this as any)._chatKeyHandler;
       if (h) document.removeEventListener('keydown', h as any);
+      // Unsubscribe auth listener
+      try { if (this.authSubscription && typeof this.authSubscription.unsubscribe === 'function') this.authSubscription.unsubscribe(); } catch {}
     } catch {}
   }
 
-  openChat() { this.isChatOpen = true; }
-  closeChat() { this.isChatOpen = false; }
+  // Storage key helper: per-user key when signed in, otherwise 'anon'
+  private storageKey(): string {
+    return this.currentUserId ? `chat_history:${this.currentUserId}` : 'chat_history:anon';
+  }
+
+  private loadConversationFromStorage() {
+    try {
+      const raw = localStorage.getItem(this.storageKey());
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) this.messages = parsed.filter((m: any) => m && m.role && (m.content !== undefined || m.rooms || m.availability) && m.time);
+        else this.messages = [];
+      } else {
+        this.messages = [];
+      }
+      setTimeout(() => this.scrollToBottom(), 0);
+      try { this.cd.detectChanges(); } catch {}
+    } catch {
+      this.messages = [];
+    }
+  }
+
+  openChat() { this.isChatOpen = true; try { this.cd.detectChanges(); } catch {} }
+  closeChat() { this.isChatOpen = false; try { this.cd.detectChanges(); } catch {} }
 
   get chatFabStyle() {
     const side = this.settings.get().chatFabSide;
@@ -418,7 +468,8 @@ export class ChatbotComponent implements AfterViewInit, OnDestroy {
   clearChat() {
     this.messages = [];
     this.pendingBooking = null;
-    this.persist();
+    try { localStorage.removeItem(this.storageKey()); } catch {}
+    try { this.cd.detectChanges(); } catch {}
   }
   exportTranscript() {
     const lines = this.messages.map(m => `[${m.time}] ${m.role === 'user' ? 'You' : 'Drac'}: ${m.content ?? (m.rooms ? '(rooms list)' : m.availability ? '(availability list)' : '')}`);
@@ -454,7 +505,11 @@ export class ChatbotComponent implements AfterViewInit, OnDestroy {
   private scrollToBottomSoon() { setTimeout(() => this.scrollToBottom(), 0); }
 
   private persist() {
-    try { localStorage.setItem('chat_history', JSON.stringify(this.messages)); } catch {}
+    try {
+      localStorage.setItem(this.storageKey(), JSON.stringify(this.messages));
+    } catch {}
+    // Ensure Angular updates the view immediately after messages change
+    try { this.cd.detectChanges(); } catch {}
   }
 
   // Helpers for rich UI

@@ -3,7 +3,8 @@
   <button id="menuButton" mat-icon-button [matMenuTriggerFor]="mainMenu" aria-label="Open menu">
     <mat-icon>menu</mat-icon>
   </button>
-  <span class="ms-2 fw-medium">BookSmart</span>
+  <img src="assets/rooms/Logo.png" alt="BookSmart Logo" class="logo me-2" />
+  <span class="ms-2 fw-medium align-middle">BookSmart</span>
   <span class="flex-grow-1"></span>
 </mat-toolbar>
 
@@ -45,9 +46,12 @@
 
 <!-- Footer with Privacy & Terms link -->
 <footer class="border-top small text-muted py-3 px-3 d-flex justify-content-between align-items-center">
-  <span>© {{ currentYear }} BookSmart</span>
-  <button *ngIf="!onLanding" class="btn btn-link p-0" data-bs-toggle="modal" data-bs-target="#legalModal">Privacy & Terms</button>
-  
+  <div class="d-flex align-items-center">
+    <span>© {{ currentYear }} BookSmart</span>
+    <button *ngIf="!onLanding" class="btn btn-link p-0 ms-3" data-bs-toggle="modal" data-bs-target="#legalModal">Privacy & Terms</button>
+  </div>
+  <div></div>
+
   <!-- Privacy & Terms Modal -->
   <div class="modal fade" id="legalModal" tabindex="-1" aria-labelledby="legalModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
