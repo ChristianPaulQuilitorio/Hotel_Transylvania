@@ -83,10 +83,11 @@ export class AppComponent implements OnInit, OnDestroy {
         // Navigating to the dashboard will still occur after an explicit
         // sign-in event (see onAuthStateChange below).
       } else {
-        this.username = null;
-        this.email = null;
-        // If there's no signed-in user on initial load, prefer landing page
-        try { this.router.navigateByUrl('/'); } catch {}
+    this.username = null;
+    this.email = null;
+    // If there's no signed-in user on initial load, do not force navigation.
+    // This allows public routes like `/admin-portal` to load without being
+    // redirected to the main landing page.
       }
     } catch (e) {
       this.isAuthenticated = false;
@@ -104,11 +105,18 @@ export class AppComponent implements OnInit, OnDestroy {
           this.router.navigateByUrl('/dashboard');
         }
       } else {
-        // Signed out or session expired -> clear user state and navigate to landing page
-        // (we prefer landing on reopen; auth-protected routes will still redirect to login as needed)
+        // Signed out or session expired -> clear user state. Avoid forcing a
+        // navigation to the public landing page if the user is currently
+        // visiting the isolated admin-portal pages so those can remain
+        // accessible (they handle their own redirect to login when needed).
         this.username = null;
         this.email = null;
-        try { this.router.navigateByUrl('/'); } catch {}
+        try {
+          const path = this.router.url.split('?')[0] || '/';
+          if (!path.startsWith('/admin-portal')) {
+            this.router.navigateByUrl('/');
+          }
+        } catch {}
       }
     });
 

@@ -1,4 +1,4 @@
-import { Component, ElementRef, ViewChild, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import { Component, ElementRef, ViewChild, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -15,6 +15,8 @@ type Room = {
   short: string;
   description: string;
   capacity: number;
+  price?: number;
+  amenities?: string[];
   status: 'available' | 'booked';
   bookedBy?: string | null;
 };
@@ -23,6 +25,7 @@ type Room = {
   selector: 'app-dashboard',
   standalone: true,
   imports: [CommonModule, FormsModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   styles: [`
     .card.h-100 {
       border: 0;
@@ -74,9 +77,9 @@ type Room = {
       </div>
 
       <div class="row g-3">
-        <div class="col-12 col-sm-6 col-lg-4" *ngFor="let room of rooms; let i = index">
+        <div class="col-12 col-sm-6 col-lg-4" *ngFor="let room of rooms; let i = index; trackBy: trackById">
           <div class="card h-100 shadow-sm">
-            <img [src]="room.image" class="card-img-top" [alt]="room.name" style="object-fit:cover; height:160px;" />
+            <img [src]="room.image" class="card-img-top" [alt]="room.name" style="object-fit:cover; height:160px;" loading="lazy" decoding="async" />
             <div class="card-body d-flex flex-column">
               <div class="d-flex justify-content-between align-items-center mb-2">
                 <h5 class="card-title mb-0">{{ room.name }}</h5>
@@ -90,7 +93,8 @@ type Room = {
                 </ng-container>
                 <span class="text-muted ms-1" *ngIf="ratings[room.id] as r">({{ r.average | number:'1.1-1' }} / 5, {{ r.count }} ratings)</span>
               </div>
-              <p class="text-muted small flex-grow-1">{{ room.short }}</p>
+              <p class="text-muted small mb-1">{{ room.short }}</p>
+              <p class="mb-1"><strong>{{ room.price | currency:'PHP':'symbol':'1.2-2' }}</strong></p>
         <button class="btn btn-primary mt-auto" (click)="openRoom(room)"
           [attr.id]="i===0 ? 'tour-first-room-details' : null"
                       [attr.aria-label]="(room.status==='available' ? 'View details for ' : 'View booking for ') + room.name">
@@ -110,8 +114,9 @@ type Room = {
               <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body" *ngIf="selectedRoom as r">
-              <img [src]="r.image" [alt]="r.name" class="img-fluid rounded mb-3" />
+              <img [src]="r.image" [alt]="r.name" class="img-fluid rounded mb-3" loading="lazy" decoding="async" />
               <p class="mb-2">{{ r.description }}</p>
+              <p class="mb-1"><strong>Price:</strong> {{ r.price | currency:'PHP':'symbol':'1.2-2' }}</p>
               <p class="mb-0"><strong>Capacity:</strong> {{ r.capacity }} person{{ r.capacity>1 ? 's' : '' }}</p>
               <div class="mt-2">
                 <strong>Amenities:</strong>
@@ -210,6 +215,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   constructor(private router: Router, private weather: WeatherService, private ratingsSvc: RatingsService, private cdr: ChangeDetectorRef) {}
   private roomChannel: any;
+  private _roomUpdateTimer: any = null;
   greetingMessage = '';
   statusMessage = '';
 
@@ -251,20 +257,15 @@ export class DashboardComponent implements OnInit, OnDestroy {
         try {
           this.roomChannel = supabase
             .channel('rooms-realtime')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'rooms' }, (payload: any) => {
-              const row = payload.new ?? payload.old;
-              if (!row?.id) return;
-              const idx = this.rooms.findIndex(r => r.id === row.id);
-              if (idx >= 0 && payload.new) {
-                this.rooms[idx] = this.mapDbToRoom(payload.new);
-              } else if (idx === -1 && payload.new) {
-                this.rooms.push(this.mapDbToRoom(payload.new));
-              }
-              // Ensure Angular updates the view when realtime updates arrive
-              try { this.cdr.detectChanges(); } catch {}
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'rooms' }, (_payload: any) => {
+              // Debounce refreshes when many realtime events arrive in short time
+              try { if (this._roomUpdateTimer) clearTimeout(this._roomUpdateTimer); } catch {}
+              this._roomUpdateTimer = setTimeout(() => {
+                this.loadRoomsFromDb().catch((e) => { console.warn('realtime refresh failed', e); });
+              }, 250);
             })
             .subscribe();
-        } catch {}
+        } catch (e) { console.warn('subscribe rooms realtime failed', e); }
       }
     } catch {
       this.currentUserId = null;
@@ -310,25 +311,71 @@ export class DashboardComponent implements OnInit, OnDestroy {
     const checkout = new Date(start);
     checkout.setDate(start.getDate() + this.stayDays);
     const checkoutStr = checkout.toISOString().split('T')[0];
-    // Try to create a booking record, but don't block room reservation if it fails (RLS/FK)
+    // Reserve the room first (authoritative). Then insert booking record. If
+    // inserting the booking fails (FK/RLS/etc), rollback the room reservation
+    // so the UI/DB remain consistent.
+    let reserved = false;
     try {
-      await createBooking(this.selectedRoom.id, this.currentUserId, this.checkinDate, checkoutStr);
-    } catch {}
-    try {
-      // Mark room as booked (authoritative)
       const ok = await bookRoom(this.selectedRoom.id, this.currentUserId);
-      if (ok) {
-        this.selectedRoom.status = 'booked';
-        this.selectedRoom.bookedBy = this.currentUserId;
-        try { this.cdr.detectChanges(); } catch {}
-      } else {
+      if (!ok) {
         this.errorMessage = 'Room is not available for the selected date.';
         return;
       }
+      reserved = true;
+      this.selectedRoom.status = 'booked';
+      this.selectedRoom.bookedBy = this.currentUserId;
+      try { this.cdr.detectChanges(); } catch {}
     } catch (e) {
       this.errorMessage = 'Could not reserve the room. Please try again later.';
       return;
     }
+
+    // Now create the booking row. If it fails, undo the room reservation.
+    try {
+      // Ensure the user has a `profiles` row (FK constraint). If there is no
+      // profile, attempts to insert into `bookings` will fail. Create a
+      // minimal profile entry if missing so booking can succeed.
+      if (!this.currentUsername && this.currentUserId) {
+        try {
+          const base = (this.currentEmail?.split('@')[0] ?? 'user') + '-' + this.currentUserId.slice(0,8);
+          const { error: upsertErr } = await supabase
+            .from('profiles')
+            .upsert({ id: this.currentUserId, username: base, email: this.currentEmail });
+          if (upsertErr) {
+            throw upsertErr;
+          }
+          this.currentUsername = base;
+        } catch (upErr) {
+          // Rollback the room reservation and show a clear message
+          try { await cancelRoom(this.selectedRoom.id, this.currentUserId as string); } catch {}
+          this.selectedRoom.status = 'available';
+          this.selectedRoom.bookedBy = null;
+          try { this.cdr.detectChanges(); } catch {}
+          this.errorMessage = 'Could not create a profile for your account; booking cancelled.';
+          return;
+        }
+      }
+
+  await createBooking(String(this.selectedRoom.id), this.currentUserId, this.checkinDate, checkoutStr);
+    } catch (err: any) {
+      // Try to rollback the room reservation; ignore rollback errors but
+      // surface a clear message to the user and log the original error.
+      try {
+        await cancelRoom(this.selectedRoom.id, this.currentUserId as string);
+      } catch (rollbackErr) {
+        console.warn('Rollback failed after booking insert error', rollbackErr);
+      }
+      this.selectedRoom.status = 'available';
+      this.selectedRoom.bookedBy = null;
+      try { this.cdr.detectChanges(); } catch {}
+      // Show the Supabase error message when available to aid debugging
+      console.error('Booking insert error', err);
+      const msg = err?.message || (err && String(err)) || 'Unknown error';
+      this.errorMessage = `Could not create booking record: ${msg}`;
+      return;
+    }
+
+    // Success - close modal
     this.bsModal?.hide();
   }
 
@@ -442,21 +489,28 @@ export class DashboardComponent implements OnInit, OnDestroy {
     short: r.short ?? '',
     description: r.description,
     capacity: r.capacity,
+    price: (r as any).price ?? 0,
+    amenities: (r as any).amenities ?? [],
     status: r.status,
     bookedBy: r.booked_by,
   });
 
+  // Optimize *ngFor diffing to avoid re-rendering unchanged cards
+  trackById = (_: number, item: Room) => item.id;
+
   private getDefaultRooms(): Room[] {
     return [
-      { id: 1, name: 'Deluxe King', image: 'assets/rooms/bed1.jpg', short: 'Spacious room with king bed', description: 'A spacious deluxe room with a comfortable king-sized bed, modern amenities, and a city view.', capacity: 2, status: 'available', bookedBy: null },
-      { id: 2, name: 'Twin Suite', image: 'assets/rooms/bed2.jpg', short: 'Two beds perfect for friends', description: 'A cozy suite featuring two twin beds, perfect for friends or colleagues traveling together.', capacity: 2, status: 'available', bookedBy: null },
-      { id: 3, name: 'Family Room', image: 'assets/rooms/bed3.jpg', short: 'Ideal for families', description: 'An ideal room for families with additional space and extra bedding available upon request.', capacity: 4, status: 'available', bookedBy: null },
-      { id: 4, name: 'Queen Standard', image: 'assets/rooms/bed4.jpg', short: 'Comfortable and affordable', description: 'A comfortable queen room with all essentials for a pleasant stay at a great rate.', capacity: 2, status: 'available', bookedBy: null },
-      { id: 5, name: 'Executive Suite', image: 'assets/rooms/bed5.jpg', short: 'Premium experience', description: 'Premium suite with a separate living area, workspace, and luxury amenities.', capacity: 3, status: 'available', bookedBy: null },
+      { id: 1, name: 'Deluxe King', image: 'assets/rooms/bed1.jpg', short: 'Spacious room with king bed', description: 'A spacious deluxe room with a comfortable king-sized bed, modern amenities, and a city view.', capacity: 2, price: 120.00, status: 'available', bookedBy: null },
+      { id: 2, name: 'Twin Suite', image: 'assets/rooms/bed2.jpg', short: 'Two beds perfect for friends', description: 'A cozy suite featuring two twin beds, perfect for friends or colleagues traveling together.', capacity: 2, price: 95.00, status: 'available', bookedBy: null },
+      { id: 3, name: 'Family Room', image: 'assets/rooms/bed3.jpg', short: 'Ideal for families', description: 'An ideal room for families with additional space and extra bedding available upon request.', capacity: 4, price: 150.00, status: 'available', bookedBy: null },
+      { id: 4, name: 'Queen Standard', image: 'assets/rooms/bed4.jpg', short: 'Comfortable and affordable', description: 'A comfortable queen room with all essentials for a pleasant stay at a great rate.', capacity: 2, price: 80.00, status: 'available', bookedBy: null },
+      { id: 5, name: 'Executive Suite', image: 'assets/rooms/bed5.jpg', short: 'Premium experience', description: 'Premium suite with a separate living area, workspace, and luxury amenities.', capacity: 3, price: 220.00, status: 'available', bookedBy: null },
     ];
   }
 
   getAmenities(id: number): string[] {
+    const found = this.rooms?.find(r => r.id === id);
+    if (found && found.amenities && found.amenities.length) return found.amenities;
     return getRoomAmenities(id);
   }
 

@@ -3,13 +3,14 @@
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
-    "start": "ng serve",
+    "start": "ng serve --port 4300",
     "build": "node scripts/generate-env.cjs && ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },
   "private": true,
   "dependencies": {
+    "@angular/animations": "^19.2.0",
     "@angular/cdk": "^19.2.19",
     "@angular/common": "^19.2.0",
     "@angular/compiler": "^19.2.0",
@@ -21,6 +22,8 @@
     "@angular/router": "^19.2.0",
     "@supabase/supabase-js": "^2.76.1",
     "bootstrap": "^5.3.8",
+    "chart.js": "^4.5.1",
+    "ng2-charts": "^8.0.0",
     "node-fetch": "^2.7.0",
     "node-nlp": "^5.0.0-alpha.5",
     "rxjs": "~7.8.0",

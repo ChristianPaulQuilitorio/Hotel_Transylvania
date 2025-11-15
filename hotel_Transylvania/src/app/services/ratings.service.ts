@@ -18,6 +18,18 @@ export class RatingsService {
   async getSummary(roomId: number): Promise<RatingSummary> {
     // Try Supabase first
     try {
+      // Prefer aggregation view for minimal payload and server-side compute
+      const agg = await supabase
+        .from('ratings_summary')
+        .select('avg_rating, rating_count')
+        .eq('room_id', roomId)
+        .maybeSingle();
+      if (!agg.error && agg.data) {
+        const avg = Number((agg.data as any).avg_rating) || 0;
+        const cnt = Number((agg.data as any).rating_count) || 0;
+        return { average: avg, count: cnt };
+      }
+      // Fallback to selecting individual ratings
       const { data, error } = await supabase
         .from('ratings')
         .select('rating')

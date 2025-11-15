@@ -343,6 +343,50 @@ img, svg, video, canvas { max-width: 100%; height: auto; }
   border-radius: 6px !important;
   background: transparent !important;
 }
+
+/* Admin portal shared responsive styles */
+.admin-card { background: #fbf7ef; color: #111; border-radius: 8px; overflow: hidden; }
+.admin-card { background: #fbf7ef; color: #111; border-radius: 8px; overflow: hidden; margin-top: 12px; }
+/* card toolbar: keep it visually distinct but compact */
+.admin-card .mat-toolbar { background: #2b2b2b; color: #fff; padding: 8px 12px; min-height: 44px; }
+.admin-card .mat-toolbar .back-button { background: #fbf7ef; color: #2b2b2b; border-radius: 6px; width:36px; height:36px; display:inline-flex; align-items:center; justify-content:center; }
+.admin-card .content { padding: 12px; }
+.admin-table-container { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.admin-table-container table { width: 100%; min-width: 640px; }
+.admin-toolbar { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+.admin-toolbar .left { display:flex; align-items:center; gap:12px; }
+.admin-toolbar .right { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+
+@media (max-width: 720px) {
+  .admin-card .content { padding: 12px; }
+  .admin-table-container table { min-width: 520px; }
+  .admin-toolbar .right { width:100%; justify-content:flex-start; }
+}
+
+/* Tighten top admin shell toolbar and responsive behaviors */
+.admin-shell-toolbar { padding: 6px 12px; min-height: 48px; }
+.admin-shell-toolbar .left mat-icon { margin-right: 8px; }
+.admin-shell-toolbar .right button.mat-button { padding: 6px 8px; font-size: 0.95rem; }
+
+@media (max-width: 520px) {
+  /* collapse text labels on tiny screens: show only icons */
+  .admin-shell-toolbar .right button.mat-button span, .admin-shell-toolbar .right button.mat-stroked-button span { display: none; }
+  .admin-shell-toolbar .right button.mat-button, .admin-shell-toolbar .right button.mat-stroked-button { min-width: 40px; padding: 6px; }
+  /* enlarge top-left icon so it's tappable */
+  .admin-shell-toolbar .left button.mat-icon-button { width:44px; height:44px; }
+  /* reduce mat-card header height on small screens */
+  .admin-card .mat-toolbar { padding: 6px 8px; min-height: 40px; }
+}
+
+/* Admin shell container spacing to avoid overlap with global toolbar */
+.admin-shell-container { padding-top: 8px; padding-left: 12px; padding-right: 12px; }
+.admin-shell-container .content-wrapper { padding-top: 6px; }
+.admin-shell-toolbar { box-shadow: 0 2px 4px rgba(0,0,0,0.25); }
+
+@media (max-width: 520px) {
+  .admin-shell-container { padding-left: 8px; padding-right: 8px; }
+}
+
 .theme-dark .modal .bg-light-subtle .btn.btn-sm:hover {
   background: rgba(255,255,255,0.04) !important;
 }

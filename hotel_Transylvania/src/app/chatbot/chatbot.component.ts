@@ -436,7 +436,7 @@ export class ChatbotComponent implements AfterViewInit, OnDestroy {
       // Try to create booking record (may fail due to RLS/FK); do not abort on failure
       let bookingRecordCreated = true;
       try {
-        await createBooking(plan.roomId, userId, plan.checkin, plan.checkout);
+  await createBooking(String(plan.roomId), userId, plan.checkin, plan.checkout);
       } catch (e) {
         bookingRecordCreated = false;
       }

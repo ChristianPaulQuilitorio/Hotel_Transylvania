@@ -8,6 +8,8 @@ export type RoomDb = {
   capacity: number;
   status: 'available' | 'booked';
   booked_by: string | null;
+  price?: number | null;
+  amenities?: string[] | null;
   short?: string | null;
 };
 
@@ -27,7 +29,7 @@ export function getRoomAmenities(id: number): string[] {
 export async function getRooms(): Promise<RoomDb[]> {
   const { data, error } = await supabase
     .from('rooms')
-    .select('id,name,image,description,capacity,status,booked_by,short')
+    .select('id,name,image,description,capacity,status,booked_by,short,price,amenities')
     .order('id');
   if (error) throw error;
   return (data as RoomDb[]) ?? [];

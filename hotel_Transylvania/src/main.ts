@@ -4,23 +4,46 @@
 // lock when the native API throws. This must run before any modules that
 // import @supabase/supabase-js so we use dynamic imports for the app.
 try {
-  if (typeof navigator !== 'undefined' && (navigator as any).locks && !(navigator as any).locks.__patchedForSupabase) {
-    const origLocks = (navigator as any).locks;
-    (navigator as any).locks = {
-      ...origLocks,
-      request: async function (...args: any[]) {
-        const cb = typeof args[1] === 'function' ? args[1] : args[2];
-        try {
-          return await (origLocks.request as any).apply(origLocks, args);
-        } catch (err) {
+  if (typeof navigator !== 'undefined') {
+    try {
+      const nav: any = navigator;
+      // If locks is missing, or already patched, create/replace with a safe
+      // implementation that never throws and always returns a resolved
+      // promise with a release() no-op. This is intentionally aggressive so
+      // it runs before any other module can attempt to use locks.
+      if (!nav.locks || !nav.locks.__patchedForSupabase) {
+        const origLocks = nav.locks;
+        const safeRequest = async function (...args: any[]) {
+          const cb = args.find((a: any) => typeof a === 'function');
+          try {
+            if (origLocks && typeof origLocks.request === 'function') {
+              try {
+                const res = origLocks.request.apply(origLocks, args);
+                if (res && typeof res.then === 'function') {
+                  return await res.catch(async () => {
+                    if (typeof cb === 'function') return await cb({} as any);
+                    return { release: () => {} };
+                  });
+                }
+                return res;
+              } catch (_) {
+                // fallthrough to callback
+              }
+            }
+          } catch (_) {}
           try {
             if (typeof cb === 'function') return await cb({} as any);
           } catch (_) {}
           return { release: () => {} };
-        }
-      },
-      __patchedForSupabase: true
-    } as any;
+        };
+        nav.locks = {
+          request: safeRequest,
+          __patchedForSupabase: true
+        } as any;
+      }
+    } catch (e) {
+      // swallow any errors during shim installation
+    }
   }
 } catch {}
 

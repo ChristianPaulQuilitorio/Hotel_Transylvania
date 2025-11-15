@@ -8,6 +8,68 @@
   <link rel="icon" type="image/png" href="assets/rooms/Logo.png">
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <!--
+    Early LockManager shim: ensure navigator.locks.request is present and
+    safe before any third-party script (like supabase-js) can call it. This
+    prevents runtime errors in some browsers/devtools where acquiring an
+    exclusive lock immediately fails. Keep this inline and minimal so it
+    executes before the app bundles load.
+  -->
+  <script>
+    (function () {
+      try {
+        if (typeof navigator !== 'undefined') {
+          var nav = navigator;
+          // If locks is missing or broken, install a safe shim. Try to
+          // overwrite even read-only properties when possible to ensure the
+          // shim runs before any library calls navigator.locks.request.
+          var install = function (orig) {
+            var safeRequest = function () {
+              var args = Array.prototype.slice.call(arguments);
+              var cb = args.find(function (a) { return typeof a === 'function'; });
+              try {
+                if (orig && typeof orig.request === 'function') {
+                  try {
+                    var res = orig.request.apply(orig, args);
+                    if (res && typeof res.then === 'function') {
+                      return res.catch(function () {
+                        try { if (typeof cb === 'function') return cb({}); } catch (_) {}
+                        return { release: function () {} };
+                      });
+                    }
+                    return res;
+                  } catch (_) { }
+                }
+              } catch (_) { }
+              try { if (typeof cb === 'function') return cb({}); } catch (_) {}
+              return Promise.resolve({ release: function () {} });
+            };
+            try {
+              // Prefer defineProperty to override non-writable implementations
+              Object.defineProperty(nav, 'locks', {
+                value: { request: safeRequest, __patchedForSupabase: true },
+                configurable: true,
+                enumerable: true,
+                writable: false
+              });
+            } catch (e) {
+              // Fallback to direct assignment if defineProperty isn't allowed
+              try { nav.locks = { request: safeRequest, __patchedForSupabase: true }; } catch (_) {}
+            }
+            try { window.__lockShimInstalled = true; } catch (_) {}
+            try { console.debug && console.debug('lockShimInstalled'); } catch (_) {}
+          };
+
+          if (!nav.locks || !nav.locks.__patchedForSupabase) {
+            install(nav.locks);
+          } else {
+            // still set a marker so we can confirm shim presence in console
+            try { window.__lockShimInstalled = true; console.debug && console.debug('lockShimAlreadyPresent'); } catch (_) {}
+          }
+        }
+      } catch (e) { /* swallow */ }
+    })();
+  </script>
 </head>
 <body class="mat-typography">
   <app-root></app-root>

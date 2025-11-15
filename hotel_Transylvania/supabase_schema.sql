@@ -72,6 +72,7 @@ create table if not exists public.bookings (
   room_id int references public.rooms(id) on delete cascade,
   customer_id uuid references public.customers(id) on delete set null,
   profile_id uuid references public.profiles(id) on delete set null,
+  username text,
   checkin_date date not null,
   checkout_date date not null,
   guests int default 1,
@@ -83,8 +84,20 @@ create table if not exists public.bookings (
 -- Indexes for fast lookups
 create index if not exists idx_bookings_room on public.bookings(room_id);
 create index if not exists idx_bookings_profile on public.bookings(profile_id);
+create index if not exists idx_bookings_username on public.bookings(username);
 -- Optional helpful index
 create index if not exists idx_rooms_status on public.rooms(status);
+
+-- Ensure a foreign key constraint exists between bookings.room_id and rooms.id
+-- This makes sure bookings always reference a valid room and provides
+-- the expected referential integrity even if the table was created earlier
+-- without the FK. We drop any existing constraint of the same name first
+-- so this script is idempotent when re-run from the repo.
+alter table public.bookings drop constraint if exists bookings_room_id_fkey;
+alter table public.bookings add constraint bookings_room_id_fkey
+  foreign key (room_id) references public.rooms(id) on delete cascade;
+
+create index if not exists idx_bookings_room on public.bookings(room_id);
 
 -- Enable RLS and strict policies for bookings so only owners can manage their rows
 alter table public.bookings enable row level security;
@@ -92,6 +105,7 @@ alter table public.bookings enable row level security;
 drop policy if exists "bookings_select_own" on public.bookings;
 drop policy if exists "bookings_insert_own" on public.bookings;
 drop policy if exists "bookings_update_own" on public.bookings;
+drop policy if exists "bookings_delete_own" on public.bookings;
 -- Users can view only their own bookings (needed for RETURNING on insert/update)
 create policy "bookings_select_own" on public.bookings
   for select using (auth.uid() = profile_id);
@@ -102,6 +116,11 @@ create policy "bookings_insert_own" on public.bookings
 create policy "bookings_update_own" on public.bookings
   for update using (auth.uid() = profile_id)
   with check (auth.uid() = profile_id);
+-- Allow users to delete their own bookings (optional). This enables client-side
+-- deletion when a user cancels a booking. If you prefer to keep an audit trail,
+-- comment out the following policy and rely on updates to set status = 'cancelled'.
+create policy "bookings_delete_own" on public.bookings
+  for delete using (auth.uid() = profile_id);
 
 -- 5) Chat logs table for observability (optional)
 create table if not exists public.chat_logs (
@@ -154,7 +173,10 @@ as $$
   from public.rooms r
   where not exists (
     select 1 from public.bookings b
-    where b.room_id = r.id
+    -- cast to text to avoid operator errors when the underlying column
+    -- types differ between environments (int vs uuid). Comparing as text
+    -- is safe for existence checks.
+    where b.room_id::text = r.id::text
       and b.status = 'booked'
       and b.checkin_date <= on_date
       and b.checkout_date > on_date
@@ -164,6 +186,76 @@ $$;
 
 grant execute on function public.is_room_available(int, date) to authenticated;
 grant execute on function public.available_rooms_on(date) to authenticated;
+
+-- Function: create_booking(room_id int, checkin_date date, checkout_date date)
+-- Performs an atomic booking: checks availability, inserts into bookings with
+-- profile_id = auth.uid(), and marks the room booked. Runs as SECURITY DEFINER
+-- so the policy surface is simplified for clients; the function itself enforces
+-- that auth.uid() is used as the booking owner to prevent impersonation.
+-- The text-based `create_booking(p_room_id text, ...)` implementation is defined
+-- below. We removed the older inline/int-typed definition to avoid duplicate
+--/orphaned PL/pgSQL blocks when applying this schema.
+-- Ensure any older overloads are removed so we don't get ambiguous function errors.
+drop function if exists public.create_booking(int, date, date);
+drop function if exists public.create_booking(text, date, date);
+create function public.create_booking(p_room_id text, p_checkin date, p_checkout date)
+returns public.bookings
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  b public.bookings%rowtype;
+  avail boolean;
+  resolved_room_id public.rooms.id%type;
+  owner_username text;
+begin
+  -- Resolve the actual room id from public.rooms by comparing text forms.
+  -- This lets the function accept either integer-like ids or uuid strings
+  -- and work across environments with differing column types.
+  select r.id
+    into resolved_room_id
+    from public.rooms r
+    where r.id::text = p_room_id::text
+    limit 1;
+
+  if resolved_room_id is null then
+    raise exception 'room not found';
+  end if;
+
+  -- ensure the room exists and is currently available for the requested date
+  select not exists (
+    select 1 from public.bookings cb
+    where cb.room_id::text = resolved_room_id::text
+      and cb.status = 'booked'
+      and cb.checkin_date <= p_checkin
+      and cb.checkout_date > p_checkin
+  ) into avail;
+  if not avail then
+    raise exception 'room not available for the selected date';
+  end if;
+
+  -- Insert booking owned by the current user using the resolved_room_id
+  -- Use the resolved_room_id (selected from public.rooms) so the inserted
+  -- value always matches the DB-native type for rooms.id and avoids casting
+  -- errors (integer vs uuid mismatches). This is simpler and more robust
+  -- than attempting direct casts of the caller-supplied text.
+  -- fetch the caller's username from profiles (if available) so we can store
+  -- a denormalized copy on the booking row for easier display in the client
+  select username into owner_username from public.profiles where id = auth.uid();
+
+  insert into public.bookings (room_id, profile_id, username, checkin_date, checkout_date, status)
+  values (resolved_room_id, auth.uid(), owner_username, p_checkin, p_checkout, 'booked')
+  returning * into b;
+
+  -- Mark the room as booked (best-effort; will run as the definer)
+  update public.rooms set status = 'booked', booked_by = auth.uid() where id = resolved_room_id;
+
+  return b;
+end;
+$$;
+
+grant execute on function public.create_booking(text, date, date) to authenticated;
 
 -- NOTE: Supabase sets up auth.users automatically. Use policies to control row-level security (RLS).
 -- Example: allow authenticated users to select their own profile (uncomment and adapt before enabling RLS)
@@ -177,3 +269,35 @@ grant execute on function public.available_rooms_on(date) to authenticated;
 -- ('102','Double','Comfortable double room',79.99,2);
 
 -- End of schema
+
+-- Admin helper: return all bookings with room info for admin portal
+-- This runs as SECURITY DEFINER so it bypasses RLS for admin consumption.
+drop function if exists public.admin_list_bookings();
+create function public.admin_list_bookings()
+returns table (
+  id uuid,
+  profile_id uuid,
+  username text,
+  checkin_date date,
+  checkout_date date,
+  created_at timestamptz,
+  rooms json
+)
+language sql
+security definer
+set search_path = public, pg_temp
+as $$
+  select b.id,
+         b.profile_id,
+         -- prefer denormalized username on bookings, but fall back to the
+         -- profile username when the denormalized value is null
+         coalesce(b.username, p.username) as username,
+         b.checkin_date, b.checkout_date, b.created_at,
+         json_build_object('id', r.id, 'name', r.name) as rooms
+  from public.bookings b
+  left join public.profiles p on p.id = b.profile_id
+  left join public.rooms r on r.id = b.room_id
+  order by b.created_at desc;
+$$;
+
+grant execute on function public.admin_list_bookings() to anon, authenticated;
