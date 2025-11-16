@@ -3,6 +3,10 @@
   "framework": "angular",
   "buildCommand": "npm run build",
   "outputDirectory": "dist/hotel-transylvania/browser",
+  "github": {
+    "enabled": true,
+    "repo": "ChristianPaulQuilitorio/Hotel_Transylvania"
+  },
   "routes": [
     { "handle": "filesystem" },
     { "src": "/.*", "dest": "/index.html" }
