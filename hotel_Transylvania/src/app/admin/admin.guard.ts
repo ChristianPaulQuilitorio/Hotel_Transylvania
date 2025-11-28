@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { CanActivate, Router } from '@angular/router';
-import { supabase, getUser } from '../services/supabase.service';
+import { supabase, getUser, isAdminUser } from '../services/supabase.service';
 
 @Injectable({ providedIn: 'root' })
 export class AdminGuard implements CanActivate {
@@ -14,9 +14,8 @@ export class AdminGuard implements CanActivate {
         this.router.navigate(['/login']);
         return false;
       }
-      const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle();
-      const role = (profile as any)?.role;
-      if (role === 'admin') return true;
+      const allowed = await isAdminUser(false);
+      if (allowed) return true;
       // not allowed
       this.router.navigate(['/dashboard']);
       return false;

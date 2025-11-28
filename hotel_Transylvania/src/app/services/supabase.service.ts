@@ -139,6 +139,27 @@ export const signOutAdmin = () => supabaseAdmin.auth.signOut();
 
 export const getAdminUser = () => supabaseAdmin.auth.getUser();
 
+/**
+ * Returns true when the currently authenticated user is an administrator.
+ * Checks both `role === 'admin'` and a legacy `is_admin` boolean flag.
+ * By default uses the regular client; set `useAdminClient` to true to use the
+ * namespaced `supabaseAdmin` client (admin portal).
+ */
+export const isAdminUser = async (useAdminClient = false): Promise<boolean> => {
+  try {
+    const client = useAdminClient ? supabaseAdmin : supabase;
+    const { data } = await client.auth.getUser();
+    const user = (data as any)?.user;
+    if (!user || !user.id) return false;
+    const { data: profile, error } = await client.from('profiles').select('role,is_admin').eq('id', user.id).maybeSingle();
+    if (error) return false;
+    const p = profile as any;
+    return (p && ((p.role === 'admin') || (p.is_admin === true)));
+  } catch (e) {
+    return false;
+  }
+};
+
 // Expose the client for quick debugging in browser DevTools.
 // Usage in console: `window.supabase` or just `supabase` after assigning.
 try {

@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { CanActivate, Router, ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
-import { supabaseAdmin } from '../services/supabase.service';
+import { supabaseAdmin, isAdminUser } from '../services/supabase.service';
 
 @Injectable({ providedIn: 'root' })
 export class PortalGuard implements CanActivate {
@@ -16,8 +16,8 @@ export class PortalGuard implements CanActivate {
         this.router.navigate(['/admin-portal','login']);
         return false;
       }
-      const { data: profile, error } = await supabaseAdmin.from('profiles').select('is_admin').eq('id', user.id).single();
-      if (error || !(profile as any)?.is_admin) {
+      const allowed = await isAdminUser(true);
+      if (!allowed) {
         this.router.navigate(['/admin-portal','login']);
         return false;
       }

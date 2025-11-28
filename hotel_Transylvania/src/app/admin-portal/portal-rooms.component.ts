@@ -17,6 +17,7 @@ import { environment } from '../../environments/environment';
 import { Router } from '@angular/router';
 import { firstValueFrom, Observable, of } from 'rxjs';
 import { AdminService } from '../admin/admin.service';
+import { isAdminUser } from '../services/supabase.service';
 
 @Component({
   selector: 'app-portal-rooms',
@@ -158,12 +159,7 @@ export class PortalRoomsComponent implements OnInit {
 
   private async checkAdminFlag() {
     try {
-      const { data } = await supabaseAdmin.auth.getUser();
-      const user = (data as any)?.user;
-      if (!user) { this.isAdmin = false; return; }
-      const { data: profile, error } = await supabaseAdmin.from('profiles').select('is_admin').eq('id', user.id).single();
-      if (!error && profile && (profile as any).is_admin) this.isAdmin = true;
-      else this.isAdmin = false;
+      this.isAdmin = await isAdminUser(true);
     } catch (e) {
       this.isAdmin = false;
     }
